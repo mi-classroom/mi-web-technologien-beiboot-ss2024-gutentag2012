@@ -14,3 +14,7 @@ Hier ein paar ADR Beispiele aus dem letzten Semestern:
 - https://github.com/mi-classroom/mi-web-technologien-beiboot-ss2022-twobiers/tree/main/adr
 
 Halten Sie die Anwendung, gerade in der Anfangsphase möglichst einfach, schlank und leichtgewichtig (KISS).
+
+## Zeitaufwand
+
+- Initialer Go Service 6h

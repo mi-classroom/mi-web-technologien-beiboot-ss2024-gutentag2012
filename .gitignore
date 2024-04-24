@@ -1,0 +1,8 @@
+# FFMPEG Binaries
+ffmpeg/*
+!ffmpeg/README.md
+
+# Files tho transform
+input/*
+output/*
+merged.png
