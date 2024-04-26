@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"strconv"
 	"sync"
+
+	"github.com/joho/godotenv"
 )
 
 type Changeable interface {
@@ -34,8 +36,8 @@ func (color *MyColor) RGBA() (uint32, uint32, uint32, uint32) {
 	return color.r, color.g, color.b, color.a
 }
 
-func splitVideoIntoFrames(input string, output string, frameRate int) {
-	cmd := exec.Command("..\\ffmpeg\\bin\\ffmpeg", "-i", input, "-vf", "scale=1600:-1", "-r", strconv.Itoa(frameRate), output)
+func splitVideoIntoFrames(ffmpegPath string, input string, output string, frameRate int) {
+	cmd := exec.Command(ffmpegPath, "-i", input, "-vf", "scale=1600:-1", "-r", strconv.Itoa(frameRate), output)
 
 	var outb bytes.Buffer
 	cmd.Stdout = &outb
@@ -49,12 +51,23 @@ func splitVideoIntoFrames(input string, output string, frameRate int) {
 	}
 }
 
-// TODO Add Readme to ffmpeg folder, so that a user knows they have to install the binary on their own, ignore
-// TODO Use exe for windows or other script for linux or mac
-// TODO Use ENV for path to ffmpeg to also allow for global installation to work
+type Env struct {
+	FfmpegPath string
+}
+
+func configureEnvs() Env {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return Env{os.Getenv("FFMPEG_BINARY_PATH")}
+}
 
 func main() {
-	splitVideoIntoFrames("../input/rb25.mov", "../output/ffout%3d.png", 20)
+	env := configureEnvs()
+
+	splitVideoIntoFrames(env.FfmpegPath, "../input/rb25.mov", "../output/ffout%3d.png", 20)
 
 	// Define the directory you want to process
 	dir := "../output"

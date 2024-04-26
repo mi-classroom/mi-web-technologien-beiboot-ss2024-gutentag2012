@@ -6,3 +6,6 @@ ffmpeg/*
 input/*
 output/*
 merged.png
+
+# Env
+*/.env
