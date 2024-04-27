@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/color"
 	"image/png"
 	"log"
@@ -16,24 +17,6 @@ import (
 
 type Changeable interface {
 	Set(x, y int, c color.Color)
-}
-
-type MyColor struct {
-	r uint32
-	g uint32
-	b uint32
-	a uint32
-}
-
-func (color *MyColor) FromRGBA(r uint32, g uint32, b uint32, a uint32) {
-	color.r = r
-	color.g = g
-	color.b = b
-	color.a = a
-}
-
-func (color *MyColor) RGBA() (uint32, uint32, uint32, uint32) {
-	return color.r, color.g, color.b, color.a
 }
 
 func splitVideoIntoFrames(ffmpegPath string, input string, output string, frameRate int) {
@@ -93,7 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	outputFiles := outputFilesAll[475:485]
+	outputFiles := outputFilesAll[375:485]
 	for _, outputFile := range outputFiles {
 		filePaths <- outputFile.Name()
 	}
@@ -136,9 +119,7 @@ func main() {
 			b := combinedPixels[pixelIndex+2] / uint32(totalImages)
 			a := combinedPixels[pixelIndex+3] / uint32(totalImages)
 
-			color := &MyColor{}
-			color.FromRGBA(r, g, b, a)
-			cimg.Set(x, y, color)
+			cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
 		}
 
 		outFile, err := os.Create("../merged.png")
@@ -177,16 +158,13 @@ func worker(filePaths <-chan string, wg *sync.WaitGroup, resultPixels chan<- []u
 			matrix = make([]uint32, 4*width*height)
 		}
 
-		for x := 0; x < width; x++ {
-			for y := 0; y < height; y++ {
-				r, g, b, a := img.At(x, y).RGBA()
-				startIndex := (x * 4) + (y * width * 4)
+		imageWithPixAccess, couldCast := img.(*image.RGBA)
+		if !couldCast {
+			log.Fatal("Was unable to access pix of image")
+		}
 
-				matrix[startIndex] += r
-				matrix[startIndex+1] += g
-				matrix[startIndex+2] += b
-				matrix[startIndex+3] += a
-			}
+		for pixelIndex, pixelValue := range imageWithPixAccess.Pix {
+			matrix[pixelIndex] += uint32(pixelValue)
 		}
 
 		file.Close()
