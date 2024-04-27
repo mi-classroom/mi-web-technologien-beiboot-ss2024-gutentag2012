@@ -9,3 +9,9 @@ merged.png
 
 # Env
 */.env
+
+# Modules
+node_modules/
+
+# IDE
+.idea
