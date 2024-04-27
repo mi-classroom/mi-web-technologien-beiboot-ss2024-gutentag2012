@@ -1,0 +1,30 @@
+services:
+  minio:
+    container_name: minio
+    image: minio/minio:latest
+    ports:
+      - '9000:9000'
+      - '9090:9090'
+    command: "server /data --console-address ':9090'"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - minionetwork
+    volumes:
+      - 'minio_data:/data'
+    restart: always
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=adminadmin
+      - MINIO_DEFAULT_BUCKETS=input_videos
+
+networks:
+  minionetwork:
+    driver: bridge
+
+volumes:
+  minio_data:
+    driver: local
