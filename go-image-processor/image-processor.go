@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -14,43 +15,47 @@ type Changeable interface {
 	Set(x, y int, c color.Color)
 }
 
-func averagePixelValues() {
-	// Define the directory you want to process
-	dir := "../output"
-
-	// Channel to communicate file paths to workers
-	filePaths := make(chan string)
-
-	// Number of workers (goroutines)
+func averagePixelValues(outputFolder string, filename string, fromFrames int, toFrames int) {
 	numWorkers := 20
-
+	filePaths := make(chan string)
 	resultPixels := make(chan []uint32, numWorkers)
 
-	// WaitGroup to synchronize the workers
 	var wg sync.WaitGroup
 	wg.Add(numWorkers)
 
-	// Launch workers
 	for i := 0; i < numWorkers; i++ {
 		go pixelAdditionWorker(filePaths, &wg, resultPixels)
 	}
 
-	outputFilesAll, err := os.ReadDir(dir)
+	outputFilesAll, err := os.ReadDir(outputFolder)
 	if err != nil {
 		log.Fatal(err)
 	}
-	outputFiles := outputFilesAll[475:495]
+
+	if fromFrames == -1 {
+		fromFrames = 0
+	}
+	if toFrames == -1 {
+		toFrames = len(outputFilesAll)
+	}
+
+	outputFiles := outputFilesAll[fromFrames:toFrames]
 	for _, outputFile := range outputFiles {
-		filePaths <- outputFile.Name()
+		filePaths <- outputFolder + "/" + outputFile.Name()
 	}
 	// Close the channel once all files are processed
 	close(filePaths)
 
-	firstImageFile, err := os.Open("../output/" + outputFiles[0].Name())
+	firstImageFile, err := os.Open(outputFolder + "/" + outputFiles[0].Name())
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer firstImageFile.Close()
+	defer func(firstImageFile *os.File) {
+		err := firstImageFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(firstImageFile)
 
 	finalImage, err := png.Decode(firstImageFile)
 	if err != nil {
@@ -85,7 +90,10 @@ func averagePixelValues() {
 			cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
 		}
 
-		outFile, err := os.Create("../merged.png")
+		nameParts := strings.Split(filename, ".")
+		name := nameParts[0]
+		fmt.Println(name, nameParts)
+		outFile, err := os.Create("./tmp/" + name + ".png")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -94,8 +102,6 @@ func averagePixelValues() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Println("Done")
 	} else {
 		log.Fatal("Image could not be written to")
 	}
@@ -107,7 +113,7 @@ func pixelAdditionWorker(filePaths <-chan string, wg *sync.WaitGroup, resultPixe
 	var matrix []uint32
 
 	for filePath := range filePaths {
-		file, err := os.Open("../output/" + filePath)
+		file, err := os.Open(filePath)
 		if err != nil {
 			log.Fatal(err)
 		}

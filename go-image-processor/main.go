@@ -1,173 +1,109 @@
 package main
 
 import (
-	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
-	"image"
-	"image/color"
-	"image/png"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"os"
-	"os/exec"
-	"strconv"
-	"sync"
-
-	"github.com/joho/godotenv"
+	"strings"
 )
 
-type Changeable interface {
-	Set(x, y int, c color.Color)
+type VideoProcessingMessage struct {
+	Filename  string `json:"filename"`
+	Scale     int    `json:"scale"`
+	FromFrame int    `json:"fromFrame"`
+	ToFrame   int    `json:"toFrame"`
 }
 
-func splitVideoIntoFrames(ffmpegPath string, input string, output string, frameRate int) {
-	cmd := exec.Command(ffmpegPath, "-i", input, "-vf", "scale=1600:-1", "-r", strconv.Itoa(frameRate), output)
-
-	var outb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &outb
-
-	err := cmd.Run()
-	fmt.Println(outb.String())
-
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-type Env struct {
-	FfmpegPath string
-}
-
-func configureEnvs() Env {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return Env{os.Getenv("FFMPEG_BINARY_PATH")}
+type AmqpMessage struct {
+	Pattern string                 `json:"pattern"`
+	Data    VideoProcessingMessage `json:"data"`
 }
 
 func main() {
 	env := configureEnvs()
+	ctx := context.Background()
 
-	splitVideoIntoFrames(env.FfmpegPath, "../input/rb25.mov", "../output/ffout%3d.png", 20)
+	minio := setupMinioClient(env)
 
-	// Define the directory you want to process
-	dir := "../output"
+	amqpConnection := setupAMQPConnection(env)
+	amqpChannel := setupAMQPChannel(amqpConnection)
+	amqpQueue := setupAMQPQueue(amqpChannel, env.AMQPQueueName)
 
-	// Channel to communicate file paths to workers
-	filePaths := make(chan string)
-
-	// Number of workers (goroutines)
-	numWorkers := 20
-
-	resultPixels := make(chan []uint32, numWorkers)
-
-	// WaitGroup to synchronize the workers
-	var wg sync.WaitGroup
-	wg.Add(numWorkers)
-
-	// Launch workers
-	for i := 0; i < numWorkers; i++ {
-		go worker(filePaths, &wg, resultPixels)
-	}
-
-	outputFilesAll, err := os.ReadDir(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	outputFiles := outputFilesAll[375:485]
-	for _, outputFile := range outputFiles {
-		filePaths <- outputFile.Name()
-	}
-	// Close the channel once all files are processed
-	close(filePaths)
-
-	firstImageFile, err := os.Open("../output/" + outputFiles[0].Name())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer firstImageFile.Close()
-
-	finalImage, err := png.Decode(firstImageFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Wait for all workers to finish
-	wg.Wait()
-	close(resultPixels)
-
-	if cimg, ok := finalImage.(Changeable); ok {
-		bounds := finalImage.Bounds()
-		width, height := bounds.Dx(), bounds.Dy()
-		combinedPixels := make([]uint32, 4*width*height)
-		for pixelArray := range resultPixels {
-			for pixelIndex, pixelValue := range pixelArray {
-				combinedPixels[pixelIndex] += pixelValue
-			}
-		}
-
-		totalImages := len(outputFiles)
-		for pixelIndex := 0; pixelIndex < len(combinedPixels); pixelIndex += 4 {
-			trackIndex := pixelIndex / 4
-			x := trackIndex % width
-			y := trackIndex / width
-
-			r := combinedPixels[pixelIndex] / uint32(totalImages)
-			g := combinedPixels[pixelIndex+1] / uint32(totalImages)
-			b := combinedPixels[pixelIndex+2] / uint32(totalImages)
-			a := combinedPixels[pixelIndex+3] / uint32(totalImages)
-
-			cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
-		}
-
-		outFile, err := os.Create("../merged.png")
+	defer func(amqpConnection *amqp.Connection) {
+		err := amqpConnection.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
+	}(amqpConnection)
+	defer func(amqpChannel *amqp.Channel) {
+		err := amqpChannel.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(amqpChannel)
 
-		png.Encode(outFile, finalImage)
+	forever := make(chan bool)
 
-		fmt.Println("Done")
-	} else {
-		log.Fatal("Image could not be written to")
+	msgs, err := amqpChannel.Consume(
+		amqpQueue.Name, // queue
+		"",             // consumer
+		true,           // auto-ack
+		false,          // exclusive
+		false,          // no-local
+		false,          // no-wait
+		nil,            // args
+	)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	go func() {
+		for d := range msgs {
+			message := AmqpMessage{}
+			err := json.Unmarshal(d.Body, &message)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if message.Pattern != "video-processing" {
+				log.Fatal("Unknown pattern")
+			}
+			log.Println("Received a message:", message.Data)
+
+			localPath, err := downloadFileFromMinio(ctx, minio, env.MinioBucketName, message.Data.Filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			outputFolder, outputPath := getFrameOutputPathFromLocalPath(localPath)
+			err = os.Mkdir(outputFolder, os.ModePerm)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			splitVideoIntoFrames(env.FfmpegPath, localPath, outputPath, message.Data.Scale)
+			averagePixelValues(outputFolder, message.Data.Filename, message.Data.FromFrame, message.Data.ToFrame)
+
+			err = os.RemoveAll(localPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = os.RemoveAll(outputFolder)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("Done")
+		}
+	}()
+
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
 }
 
-func worker(filePaths <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32) {
-	defer wg.Done()
-
-	var matrix []uint32
-
-	for filePath := range filePaths {
-		file, err := os.Open("../output/" + filePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		img, err := png.Decode(file)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		bounds := img.Bounds()
-		width, height := bounds.Dx(), bounds.Dy()
-
-		if len(matrix) == 0 {
-			matrix = make([]uint32, 4*width*height)
-		}
-
-		imageWithPixAccess, couldCast := img.(*image.RGBA)
-		if !couldCast {
-			log.Fatal("Was unable to access pix of image")
-		}
-
-		for pixelIndex, pixelValue := range imageWithPixAccess.Pix {
-			matrix[pixelIndex] += uint32(pixelValue)
-		}
-
-		file.Close()
-	}
-	resultPixels <- matrix
+func getFrameOutputPathFromLocalPath(localPath string) (string, string) {
+	paths := strings.Split(localPath, ".")
+	folder := "." + paths[1] + "-frames"
+	return folder, folder + "/ffout%3d.png"
 }
