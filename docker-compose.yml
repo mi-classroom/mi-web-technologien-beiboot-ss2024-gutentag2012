@@ -7,12 +7,12 @@ services:
       - '9090:9090'
     command: "server /data --console-address ':9090'"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
       timeout: 20s
       retries: 3
     networks:
-      - minionetwork
+      - minio_net
     volumes:
       - 'minio_data:/data'
     restart: always
@@ -20,9 +20,28 @@ services:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=adminadmin
       - MINIO_DEFAULT_BUCKETS=input_videos
+  rabbitmq:
+    container_name: 'rabbitmq'
+    image: rabbitmq:3-management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - rabbitmq_net
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    restart: always
 
 networks:
-  minionetwork:
+  minio_net:
+    driver: bridge
+  rabbitmq_net:
     driver: bridge
 
 volumes:
