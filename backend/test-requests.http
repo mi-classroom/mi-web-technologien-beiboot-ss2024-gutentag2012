@@ -1,0 +1,29 @@
+POST http://localhost:3001/video-processor
+Content-Type: application/json
+
+{
+  "filename": "1e273b30-0aba-4640-84eb-51969be672bb-1714309133153.mov",
+  "scale": 1600,
+  "fromFrame": 475,
+  "toFrame": 515
+}
+
+###
+GET http://localhost:3001/file-upload/list
+Accept: application/json
+
+###
+GET http://localhost:3001/file-upload/get/c2bddeb1-c0c8-40db-addb-1ae9cc9b1bda-1714294328082.mov
+Accept: application/json
+
+###
+POST http://localhost:3001/file-upload/
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="video"; filename="input.mov"
+
+< ../go-image-processor/tmp/input.mov
+--WebAppBoundary--
+
+###
