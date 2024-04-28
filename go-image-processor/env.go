@@ -14,8 +14,11 @@ type Env struct {
 	MinioKey        string
 	MinioSecret     string
 
-	AMQPUrl       string
-	AMQPQueueName string
+	AMQPUrl string
+
+	VideoProcessorQueue string
+
+	APIUrl string
 }
 
 func configureEnvs() Env {
@@ -32,5 +35,6 @@ func configureEnvs() Env {
 		os.Getenv("MINIO_SECRET_KEY"),
 		os.Getenv("AMQP_URL"),
 		os.Getenv("VIDEO_PROCESSOR_QUEUE"),
+		os.Getenv("API_URL"),
 	}
 }

@@ -28,3 +28,12 @@ func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucke
 
 	return filePath, nil
 }
+
+func uploadFileToMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectName string, filePath string) error {
+	_, err := minioClient.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

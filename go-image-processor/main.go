@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -13,6 +16,7 @@ import (
 type VideoProcessingMessage struct {
 	Filename  string `json:"filename"`
 	Scale     int    `json:"scale"`
+	FrameRate int    `json:"frameRate"`
 	FromFrame int    `json:"fromFrame"`
 	ToFrame   int    `json:"toFrame"`
 }
@@ -30,7 +34,7 @@ func main() {
 
 	amqpConnection := setupAMQPConnection(env)
 	amqpChannel := setupAMQPChannel(amqpConnection)
-	amqpQueue := setupAMQPQueue(amqpChannel, env.AMQPQueueName)
+	videoProcessorQueue := setupAMQPQueue(amqpChannel, env.VideoProcessorQueue)
 
 	defer func(amqpConnection *amqp.Connection) {
 		err := amqpConnection.Close()
@@ -48,13 +52,13 @@ func main() {
 	forever := make(chan bool)
 
 	msgs, err := amqpChannel.Consume(
-		amqpQueue.Name, // queue
-		"",             // consumer
-		true,           // auto-ack
-		false,          // exclusive
-		false,          // no-local
-		false,          // no-wait
-		nil,            // args
+		videoProcessorQueue.Name, // queue
+		"",                       // consumer
+		true,                     // auto-ack
+		false,                    // exclusive
+		false,                    // no-local
+		false,                    // no-wait
+		nil,                      // args
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -83,8 +87,41 @@ func main() {
 				log.Fatal(err)
 			}
 
-			splitVideoIntoFrames(env.FfmpegPath, localPath, outputPath, message.Data.Scale)
-			averagePixelValues(outputFolder, message.Data.Filename, message.Data.FromFrame, message.Data.ToFrame)
+			splitVideoIntoFrames(env.FfmpegPath, localPath, outputPath, message.Data.Scale, message.Data.FrameRate)
+			fmt.Println("Done splitting video into frames.")
+
+			name, outPath := averagePixelValues(outputFolder, message.Data.Filename, message.Data.FromFrame, message.Data.ToFrame)
+			fmt.Println("Done processing frames.")
+
+			err = uploadFileToMinio(ctx, minio, env.MinioBucketName, name, outPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("Done uploading file to Minio.")
+
+			jsonBody := []byte(`{"filename": "` + name + `", "input": "` + message.Data.Filename + `"}`)
+			bodyReader := bytes.NewReader(jsonBody)
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, env.APIUrl+"/image-result", bodyReader)
+			if err != nil {
+				log.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+
+			res, err := http.DefaultClient.Do(req)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if res.StatusCode != http.StatusOK {
+				log.Fatal("Failed to send image result to API")
+			}
+
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				fmt.Printf("client: could not read response body: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("client: response body: %s\n", resBody)
 
 			err = os.RemoveAll(localPath)
 			if err != nil {
@@ -94,7 +131,12 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println("Done")
+			err = os.Remove(outPath)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println("Done, stored file in Minio.", name)
 		}
 	}()
 

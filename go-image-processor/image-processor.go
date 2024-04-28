@@ -1,21 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Changeable interface {
 	Set(x, y int, c color.Color)
 }
 
-func averagePixelValues(outputFolder string, filename string, fromFrames int, toFrames int) {
+func averagePixelValues(outputFolder string, filename string, fromFrames int, toFrames int) (string, string) {
 	numWorkers := 20
 	filePaths := make(chan string)
 	resultPixels := make(chan []uint32, numWorkers)
@@ -37,6 +38,18 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 	}
 	if toFrames == -1 {
 		toFrames = len(outputFilesAll)
+	}
+
+	if toFrames > len(outputFilesAll) {
+		toFrames = len(outputFilesAll)
+	}
+
+	if fromFrames > len(outputFilesAll) {
+		fromFrames = len(outputFilesAll) - 1
+	}
+
+	if fromFrames > toFrames {
+		fromFrames = toFrames - 1
 	}
 
 	outputFiles := outputFilesAll[fromFrames:toFrames]
@@ -91,9 +104,9 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 		}
 
 		nameParts := strings.Split(filename, ".")
-		name := nameParts[0]
-		fmt.Println(name, nameParts)
-		outFile, err := os.Create("./tmp/" + name + ".png")
+		name := nameParts[0] + strconv.FormatInt(time.Now().UnixMilli(), 10) + ".png"
+		outPath := "./tmp/" + name
+		outFile, err := os.Create(outPath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -102,9 +115,11 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 		if err != nil {
 			log.Fatal(err)
 		}
+		return name, outPath
 	} else {
 		log.Fatal("Image could not be written to")
 	}
+	return "", ""
 }
 
 func pixelAdditionWorker(filePaths <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32) {
