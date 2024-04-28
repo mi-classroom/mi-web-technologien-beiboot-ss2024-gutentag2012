@@ -3,9 +3,7 @@ ffmpeg/*
 !ffmpeg/README.md
 
 # Files tho transform
-input/*
-output/*
-merged.png
+*/tmp
 
 # Env
 */.env
@@ -15,3 +13,6 @@ node_modules/
 
 # IDE
 .idea
+
+# Build Files
+*/dist
