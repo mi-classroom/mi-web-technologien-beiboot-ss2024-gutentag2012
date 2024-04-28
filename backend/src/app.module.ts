@@ -8,6 +8,8 @@ import { VideoProcessorModule } from './video-processor/video-processor.module';
 import { AmqpClientModule } from './amqp-client/amqp-client.module';
 import {APP_PIPE} from "@nestjs/core";
 import {ZodValidationPipe} from "nestjs-zod";
+import { ImageResultModule } from './image-result/image-result.module';
+import {EventEmitterModule} from "@nestjs/event-emitter";
 
 @Module({
   imports: [
@@ -15,11 +17,15 @@ import {ZodValidationPipe} from "nestjs-zod";
       isGlobal: true,
       validate: envs => envSchema.parse(envs)
     }),
+    EventEmitterModule.forRoot({
+      global: true
+    }),
     EnvModule,
     MinioClientModule,
     FileUploadModule,
     AmqpClientModule,
     VideoProcessorModule,
+    ImageResultModule,
   ],
   providers: [
     {

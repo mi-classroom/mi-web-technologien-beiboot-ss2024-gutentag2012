@@ -12,12 +12,6 @@ export class MinioClientService {
   private readonly minioPort: number;
   private readonly minioBucket: string;
 
-  private readonly supportedMimeTypes = [
-    'video/mp4',
-    'video/*',
-    '*/*',
-  ]
-
   constructor(
     private readonly minio: MinioService,
     private readonly envService: EnvService
@@ -72,7 +66,7 @@ export class MinioClientService {
   }
 
   private isMimeTypeSupported(mimetype: string): boolean {
-    return this.supportedMimeTypes.includes(mimetype)
+    return mimetype.startsWith('video/')
   }
 
   private getFileUrl(filename: string, bucket: string): string {
