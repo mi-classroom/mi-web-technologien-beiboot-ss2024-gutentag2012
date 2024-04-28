@@ -1,4 +1,4 @@
-# Use FFMPEG for Video Processing
+# Video Processing for Frame Extraction
 
 |          |                                                                                                      |
 | -------- | ---------------------------------------------------------------------------------------------------- |

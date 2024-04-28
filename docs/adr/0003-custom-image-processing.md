@@ -1,4 +1,4 @@
-# {short title of solved problem and solution}
+# Custom Image Processing Tool
 
 |          |                                                                                                      |
 | -------- | ---------------------------------------------------------------------------------------------------- |

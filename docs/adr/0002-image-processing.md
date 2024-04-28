@@ -1,4 +1,4 @@
-# {short title of solved problem and solution}
+# Image Processing for Long Term Exposure
 
 |          |                                                                                                      |
 | -------- | ---------------------------------------------------------------------------------------------------- |
