@@ -46,18 +46,20 @@ export class MinioClientService {
     })
   }
 
-  public async uploadVideo(file: Express.Multer.File) {
+  public async uploadVideo(file: Express.Multer.File, options: { prefix?: string, newName?: string }) {
     if (!this.isMimeTypeSupported(file.mimetype)) {
       throw new UnsupportedMimeType(`Unsupported mime type ${file.mimetype}`)
     }
 
-    const fileId = randomUUID();
     const fileExtension = extname(file.originalname);
     const metaData = {
       'Content-Type': file.mimetype,
     };
 
-    const filename = `${fileId}-${Date.now()}${fileExtension}`;
+    const prefix = options.prefix ? `${options.prefix}/` : '';
+    const newName = options.newName ? options.newName : `${randomUUID()}-${Date.now()}`;
+
+    const filename = `${prefix}${newName}${fileExtension}`;
     await this.minio.client.putObject(this.minioBucket, filename, file.buffer, file.size, metaData)
 
     return {
@@ -72,6 +74,15 @@ export class MinioClientService {
 
   private getFileUrl(filename: string, bucket: string): string {
     return `${this.minioEndpoint}:${this.minioPort}/${bucket}/${filename}`
+  }
+
+  public async fileExists(filename: string) {
+    return this.minio.client.statObject(this.minioBucket, filename).then(() => true).catch(() => false)
+  }
+
+  public async deleteFolder(folder: string) {
+    const files = await this.listFiles(folder)
+    await this.minio.client.removeObjects(this.minioBucket, files.map(file => file.name).filter(Boolean) as string[])
   }
 }
 
