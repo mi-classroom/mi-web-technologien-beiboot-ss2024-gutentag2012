@@ -44,6 +44,19 @@ export async function createProjectStack(filename: string, values: {
   // })
 }
 
+type ProgressData = {
+  Event: string
+Identifier: string
+CurrentStep: number
+MaxSteps: number
+Message: string
+}
+
+export function listenToProgress(event: string, identifier: string, onProgress: (data: ProgressData) => void) {
+  const eventSource = new EventSource(`http://localhost:3001/image-result/${event}/${identifier}`)
+  eventSource.addEventListener("progress", e => onProgress(JSON.parse(e.data)))
+} 
+
 export async function createImageFromStack(project: string, stack: string, options: {frames: number[]}) {
   return fetch("http://localhost:3001/video-processor/generate", {
     method: "POST",

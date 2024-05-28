@@ -7,7 +7,8 @@ import {Label} from "@/components/ui/label.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {useComputed} from "@preact/signals-react";
 import {ErrorText, ErrorTextForm} from "@/components/ui/ErrorText.tsx";
-import {createImageFromStack} from "@/lib/video-processor.repo.ts";
+import {createImageFromStack, listenToProgress} from "@/lib/video-processor.repo.ts";
+import { ProgressDialog, useProgressDialog } from "./ProgressDialog";
 
 /**
  * @useSignals
@@ -48,8 +49,10 @@ const SubmitButton = () => {
     <Button
       className="mt-4"
       type="submit"
-      disabled={!form.isValid.value}
-    >Generate Long-term Exposure</Button>
+      disabled={!form.canSubmit.value}
+    >
+      Generate Long-term Exposure
+    </Button>
   )
 }
 
@@ -60,13 +63,27 @@ export function ImageGeneratorForm({files, existingOutputs, project, stack}: { f
       frames: frames.map(f => parseInt(f))
     }
   }), [existingOutputs])
+  const progressDialogData = useProgressDialog()
 
   const [api, setApi] = useState<CarouselApi>()
   const form = useForm({
     defaultValues: {
       frames: [1, files.length]
     },
-    onSubmit: (values) => createImageFromStack(project, stack, values),
+    onSubmit: async (values) => {
+      await createImageFromStack(project, stack, values);
+      return new Promise(r => {
+        const identifier = `${project.replaceAll("/", encodeURIComponent("/"))}-${stack}-${values.frames.join("-")}`
+        listenToProgress("generate-image", identifier, data => {
+          progressDialogData.value = data
+          if(data.CurrentStep === data.MaxSteps) {
+            window.location.assign(`/project/${project}`)
+            progressDialogData.value = null
+            r(undefined)
+          }
+        })
+      })
+    },
     validator: values => {
       const stackAlreadyUsed = usedVariables.some(({frames}) => values.frames.length === frames.length && values.frames.every((v, i) => v === frames[i]))
       return stackAlreadyUsed && "This image already exists"
@@ -93,6 +110,8 @@ export function ImageGeneratorForm({files, existingOutputs, project, stack}: { f
         void form.handleSubmit()
       }}
     >
+      <ProgressDialog label="Image Processing" description="Currently processing the given frames to create a long term exposure image. Be aware that this might take a while depending on the input." data={progressDialogData} />
+      
       <form.FormProvider>
         <form.FieldProvider
           name="frames"

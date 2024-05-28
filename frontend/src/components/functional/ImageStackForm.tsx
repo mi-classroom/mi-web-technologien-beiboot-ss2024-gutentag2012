@@ -7,7 +7,10 @@ import {ZodAdapter} from "@formsignals/validation-adapter-zod";
 import {z} from "zod";
 import {useEffect, useMemo} from "react";
 import {useSignal} from "@preact/signals-react";
-import {createProjectStack} from "@/lib/video-processor.repo.ts";
+import {createProjectStack, listenToProgress} from "@/lib/video-processor.repo.ts";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogHeader, AlertDialogTrigger } from "../ui/alert-dialog";
+import { Progress } from "../ui/progress";
+import { ProgressDialog, useProgressDialog } from "./ProgressDialog";
 
 type SrcVideoProps = {
   duration: string
@@ -35,6 +38,8 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
     }
   }), [stacks])
 
+  const progressDialogData = useProgressDialog()
+
   const srcVideo = useSignal<SrcVideoProps | null>(null)
   const form = useForm({
     validatorAdapter: ZodAdapter,
@@ -44,7 +49,21 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
       to: "",
       frameRate: 30
     },
-    onSubmit: values => createProjectStack(project, values).then(success => console.log(success)).catch(err => console.error(err)),
+    onSubmit: async values => {
+      await createProjectStack(project, values).then(success => console.log(success)).catch(err => console.error(err));
+      return new Promise(r => {
+        const identifier = `${project.replaceAll("/", encodeURIComponent("/"))}-${values.frameRate}-${values.scale}-${values.from}-${values.to}`
+        listenToProgress("create-stack", identifier, data => {
+          progressDialogData.value = data
+          if(data.CurrentStep !== data.MaxSteps) return
+
+          const projectName = project.split("/")[0]
+          window.location.assign(`/project/${projectName}/stack/output--scale=${values.scale}--frameRate=${values.frameRate}--from=${values.from.replaceAll(":", "-")}--to=${values.to.replaceAll(":", "-")}`)
+          progressDialogData.value = null
+          r(undefined)
+        })
+      })
+    },
     validator: values => {
       const stackAlreadyUsed = usedVariables.some(({scale, from, to, frameRate}) => values.scale === scale && values.from === from && values.to === to && values.frameRate === frameRate)
       return stackAlreadyUsed && "This image stack already exists"
@@ -74,6 +93,8 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
 
   return (
     <div className="flex-col flex gap-2">
+      <ProgressDialog label="Video Processing" description="Currently processing project video and extracting frames. Be aware that this might take a while depending on the input." data={progressDialogData} />
+    
       <form.FormProvider>
       <form
         onSubmit={(e) => {
