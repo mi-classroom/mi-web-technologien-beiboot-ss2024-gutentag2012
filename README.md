@@ -17,11 +17,19 @@ Halten Sie die Anwendung, gerade in der Anfangsphase möglichst einfach, schlank
 
 ## Zeitaufwand
 
-| Aufgabe                             | Zeitaufwand |
-|-------------------------------------|-------------|
-| Initialer Go Service                | 6h          |
-| Vergleich Performance gegen Magick  | 2h          |
-| Minio Anbindung                     | 2h          |
-| AMQP Anbindung + Backend Erstellung | 4h          |
-| Simples initiales Frontend          | 2h          |
-| Total                               | 16h         |
+| Aufgabe                                     | Zeitaufwand |
+|---------------------------------------------|-------------|
+| Initialer Go Service                        | 6h          |
+| Vergleich Performance gegen Magick          | 2h          |
+| Minio Anbindung                             | 2h          |
+| AMQP Anbindung + Backend Erstellung         | 4h          |
+| Simples initiales Frontend                  | 2h          |
+| Total Issue #1                              | 16h         |
+|                                             |             |
+| UI Umstellen auf Projekte                   | 5h          |
+| Backend + Go Service auf Projekte umstellen | 6h          |
+| UI fixes + improvements                     | 2h          |
+| Real Time Progress Indication               | 3h          |
+| Total Issue #2                              | 16h         |
+|                                             |             |
+| Total                                       | 32h         |
