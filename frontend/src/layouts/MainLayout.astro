@@ -1,0 +1,51 @@
+---
+import "@/styles/globals.css"
+import {BackIcon} from "../components/icons/BackIcon";
+
+const {title, description, navBack = "/", hideNavBack} = Astro.props
+---
+
+<script is:inline>
+    const darkModePref = window.matchMedia('(prefers-color-scheme: dark)')
+    darkModePref.addEventListener('change', e => {
+      document.documentElement.classList[e.matches ? 'add' : 'remove']('dark');
+    });
+    document.documentElement.classList[darkModePref.matches ? 'add' : 'remove']('dark');
+</script>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="/favicon.svg"
+    />
+    <meta
+        name="viewport"
+        content="width=device-width"
+    />
+    <meta
+        name="generator"
+        content={Astro.generator}
+    />
+    <title>Long Term Exposure Imitator</title>
+</head>
+<body class="container py-4">
+
+<header class="mb-4 flex flex-row gap-2 items-center">
+  {!hideNavBack && <a href={navBack}>
+    <BackIcon size={32}/>
+  </a>}
+  <div>
+    <h1 class="font-bold text-2xl">{title}</h1>
+    {description && <h2 class="text-lg text-muted-foreground">{description}</h2>}
+  </div>
+</header>
+
+<main>
+  <slot/>
+</main>
+
+</body>
+</html>

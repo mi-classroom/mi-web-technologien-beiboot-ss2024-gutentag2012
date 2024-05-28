@@ -1,27 +1,14 @@
 ---
-import "@/styles/globals.css"
-import {VideoUploader} from "../components/functional/VideoUploader";
+import {ProjectCreatorForm} from "../components/functional/ProjectCreatorForm";
+import ProjectList from "../components/functional/ProjectList.astro";
+import MainLayout from "../layouts/MainLayout.astro";
 ---
+<MainLayout title="Projects" description="View your long term exposure projects or create new ones." hideNavBack>
+    <h3 class="font-semibold mb-2">Projects</h3>
 
-<script is:inline>
-    const darkModePref = window.matchMedia('(prefers-color-scheme: dark)')
-    darkModePref.addEventListener('change', e => {
-        document.documentElement.classList[e.matches ? 'add' : 'remove']('dark');
-    });
-    document.documentElement.classList[darkModePref.matches ? 'add' : 'remove']('dark');
-</script>
+    <ProjectList />
 
-<html lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-    <meta name="viewport" content="width=device-width"/>
-    <meta name="generator" content={Astro.generator}/>
-    <title>Long Term Exposure Imitator</title>
-</head>
-<body class="container py-4">
-<h1 class="font-bold text-2xl">Long Term Exposure</h1>
-<h6 class="text-muted-foreground">Create long term exposure pictures based on videos.</h6>
-<VideoUploader client:only="react"/>
-</body>
-</html>
+    <h3 class="font-semibold mb-2 mt-4">Create new Project</h3>
+
+    <ProjectCreatorForm client:visible />
+</MainLayout>
