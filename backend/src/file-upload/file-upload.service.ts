@@ -12,6 +12,10 @@ export class FileUploadService {
 
   public async listFiles() {
     return this.minioClientService.listFiles()
+
+  public async upload(file: Express.Multer.File, options: { prefix?: string, newName?: string }) {
+    return this.minioClientService.uploadVideo(file, options)
+  }
   }
 
   public async upload(file: Express.Multer.File) {

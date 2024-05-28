@@ -26,11 +26,12 @@ export class FileUploadController {
   @UseInterceptors(FileInterceptor('video'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
+    @Body() body: { prefix?: string, newName?: string }
   ) {
     if(!file) {
       throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST)
     }
-    return this.fileUploadService.upload(file).catch(err => {
+    return this.fileUploadService.upload(file, body).catch(err => {
       if (err instanceof UnsupportedMimeType) {
         throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
       }
