@@ -25,6 +25,17 @@ export class MinioClientService {
     return this.minio.client.getObject(this.minioBucket, filename)
   }
 
+  public async getFileStats(filename: string): Promise<{
+    size: number;
+    lastModified: Date;
+  }> {
+    return this.minio.client.statObject(this.minioBucket, filename)
+  }
+
+  public async getPartialFile(filename: string, start: number, end: number) {
+    return this.minio.client.getPartialObject(this.minioBucket, filename, start, end - start + 1)
+  }
+
   public async listFiles(folder: string) {
     const bucketStream = this.minio.client.listObjectsV2(this.minioBucket, folder === "root" ? undefined : folder, folder !== "root", "/")
     return new Promise<BucketItem[]>((resolve, reject) => {

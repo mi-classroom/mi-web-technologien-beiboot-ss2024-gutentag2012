@@ -8,12 +8,14 @@ import {
   Res,
   UploadedFile,
   UseInterceptors,
-  Response, Body, Delete
+  Body, Delete,
+  Req
 } from '@nestjs/common';
 import {FileUploadService} from "./file-upload.service";
 import {FileInterceptor} from "@nestjs/platform-express";
-import {Express} from "express";
+import {Express, Request, Response} from "express";
 import {UnsupportedMimeType} from "../minio-client/minio-client.service";
+import {lookup} from "mime-types"
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -39,8 +41,7 @@ export class FileUploadController {
     });
   }
 
-  @Get("/get/:filename")
-  async getFile(@Param('filename') filename: string, @Res() res: Response) {
+  private async sendWholeFile(filename: string, res: Response) {
     const file = await this.fileUploadService.getFile(filename).catch(err => {
       throw new HttpException(`Error getting file "${filename}": ${err?.message ?? err}`, HttpStatus.INTERNAL_SERVER_ERROR)
     });
@@ -49,10 +50,38 @@ export class FileUploadController {
       throw new HttpException(`File "${filename}" not found`, HttpStatus.NOT_FOUND)
     }
 
-    (res as any).set({
-      'Content-Disposition': `attachment; filename="${filename}"`,
-    })
-    file.pipe(res as any)
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+    res.setHeader('Content-Type', lookup(filename) || 'application/octet-stream');
+
+    file.pipe(res)
+  }
+
+  private async sendPartialFile(filename: string, range: string, res: Response) {
+    const fileStats = await this.fileUploadService.getFileStats(filename)
+
+     const CHUNK_SIZE = 10 ** 6; // 1MB chunk size
+     const start = Number(range.replace(/\D/g, ''));
+     const end = Math.min(start + CHUNK_SIZE, fileStats.size - 1);
+
+    res.setHeader('Content-Range', `bytes ${start}-${end}/${fileStats.size}`);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Content-Length', end - start + 1);
+    res.setHeader('Content-Type', lookup(filename ) || "video/mp4");
+
+    const stream = await this.fileUploadService.getPartialFile(filename, start, end)
+    res.status(206)
+
+    stream.pipe(res)
+  }
+
+  @Get("/get/:filename")
+  async getFile(@Param('filename') filename: string, @Req() req: Request, @Res() res: Response) {
+    const range = req.headers?.range
+    if(!range) {
+      this.sendWholeFile(filename, res)
+    } else {
+      this.sendPartialFile(filename, range, res)
+    }
   }
 
   @Get("/list/:folder")
