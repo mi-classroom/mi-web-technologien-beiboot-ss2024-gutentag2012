@@ -10,15 +10,19 @@ export class FileUploadService {
     return this.minioClientService.getFile(filename)
   }
 
-  public async listFiles() {
-    return this.minioClientService.listFiles()
+  public async listFiles(folder: string) {
+    return this.minioClientService.listFiles(folder)
+  }
 
   public async upload(file: Express.Multer.File, options: { prefix?: string, newName?: string }) {
     return this.minioClientService.uploadVideo(file, options)
   }
+
+  public async fileExists(filename: string) {
+    return this.minioClientService.fileExists(filename)
   }
 
-  public async upload(file: Express.Multer.File) {
-    return this.minioClientService.uploadVideo(file)
+  public async deleteFolder(folder: string) {
+    return this.minioClientService.deleteFolder(folder)
   }
 }

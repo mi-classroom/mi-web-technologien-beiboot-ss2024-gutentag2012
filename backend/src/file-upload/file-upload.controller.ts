@@ -8,7 +8,7 @@ import {
   Res,
   UploadedFile,
   UseInterceptors,
-  Response
+  Response, Body, Delete
 } from '@nestjs/common';
 import {FileUploadService} from "./file-upload.service";
 import {FileInterceptor} from "@nestjs/platform-express";
@@ -55,8 +55,18 @@ export class FileUploadController {
     file.pipe(res as any)
   }
 
-  @Get("/list")
-  async listFiles() {
-    return this.fileUploadService.listFiles()
+  @Get("/list/:folder")
+  async listFiles(@Param('folder') folder: string) {
+    return this.fileUploadService.listFiles(folder)
+  }
+
+  @Get("/exists/:filename")
+  async fileExists(@Param('filename') filename: string) {
+    return this.fileUploadService.fileExists(filename)
+  }
+
+  @Delete("/delete/:folder")
+  async deleteFolder(@Param('folder') folder: string) {
+    return this.fileUploadService.deleteFolder(folder)
   }
 }
