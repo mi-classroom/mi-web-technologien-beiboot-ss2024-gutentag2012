@@ -1,10 +1,10 @@
-import {Injectable, Logger, HttpException, HttpStatus} from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import {MinioService} from 'nestjs-minio-client';
 import {randomUUID} from 'node:crypto'
 import {extname} from "node:path"
 import {EnvService} from "../env/env.service";
 
-type BucketItem = { name?: string; lastModified?: Date; size: number; }
+type BucketItem = { name?: string; lastModified?: Date; size: number; prefix?: string; }
 
 @Injectable()
 export class MinioClientService {
@@ -25,12 +25,13 @@ export class MinioClientService {
     return this.minio.client.getObject(this.minioBucket, filename)
   }
 
-  public async listFiles() {
-    const bucketStream = this.minio.client.listObjects(this.minioBucket)
+  public async listFiles(folder: string) {
+    const bucketStream = this.minio.client.listObjectsV2(this.minioBucket, folder === "root" ? undefined : folder, folder !== "root", "/")
     return new Promise<BucketItem[]>((resolve, reject) => {
       const data: BucketItem[] = []
       bucketStream.on('data', (obj) => {
         data.push({
+          prefix: obj.prefix,
           name: obj.name,
           lastModified: obj.lastModified,
           size: obj.size,
