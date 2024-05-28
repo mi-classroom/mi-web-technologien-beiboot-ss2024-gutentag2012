@@ -31,9 +31,9 @@ const {title, description, navBack = "/", hideNavBack} = Astro.props
     />
     <title>Long Term Exposure Imitator</title>
 </head>
-<body class="container py-4">
+<body>
 
-<header class="mb-4 flex flex-row gap-2 items-center">
+<header class="container py-4 mb-4 flex flex-row gap-2 items-center">
   {!hideNavBack && <a href={navBack}>
     <BackIcon size={32}/>
   </a>}
@@ -43,7 +43,7 @@ const {title, description, navBack = "/", hideNavBack} = Astro.props
   </div>
 </header>
 
-<main>
+<main class="container">
   <slot/>
 </main>
 
