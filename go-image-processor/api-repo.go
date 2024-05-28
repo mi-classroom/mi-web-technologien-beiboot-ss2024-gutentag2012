@@ -1,27 +1,48 @@
 package main
 
-// TODO Add method to reply to server
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+)
 
-//jsonBody := []byte(`{"filename": "` + name + `", "input": "` + message.Data.Filename + `"}`)
-//bodyReader := bytes.NewReader(jsonBody)
-//req, err := http.NewRequestWithContext(ctx, http.MethodPost, env.APIUrl+"/image-result", bodyReader)
-//if err != nil {
-//	log.Fatal(err)
-//}
-//req.Header.Set("Content-Type", "application/json")
-//
-//res, err := http.DefaultClient.Do(req)
-//if err != nil {
-//	log.Fatal(err)
-//}
-//
-//if res.StatusCode != http.StatusOK {
-//	log.Fatal("Failed to send image result to API")
-//}
-//
-//resBody, err := io.ReadAll(res.Body)
-//if err != nil {
-//	fmt.Printf("client: could not read response body: %s\n", err)
-//	os.Exit(1)
-//}
-//fmt.Printf("client: response body: %s\n", resBody)
+type ProgressMessage struct {
+	Event       string
+	Identifier  string
+	CurrentStep int
+	MaxSteps    int
+	Message     string
+}
+
+func sendProgressMessageToAPI(ctx context.Context, env Env, message ProgressMessage) error {
+	body, err := json.Marshal(message)
+	if err != nil {
+		log.Println("Error while sending message to API", err)
+		return err
+	}
+
+	bodyReader := bytes.NewReader(body)
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, env.APIUrl+"/image-result", bodyReader)
+	if err != nil {
+		log.Println("Error creating new http request", err)
+		return err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		log.Println("Error while sending request", err)
+		return err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		log.Println("Server response was not OK", response.StatusCode)
+		return errors.New("Invalid Server Response")
+	}
+
+	return nil
+}
