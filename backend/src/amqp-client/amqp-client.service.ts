@@ -3,6 +3,7 @@ import {Client, ClientProxy, ClientRMQ, RmqRecordBuilder} from "@nestjs/microser
 import {AMPQ_VIDEO_PROCESSING} from "./amqp-client.constants";
 import {EnvService} from "../env/env.service";
 import {ProcessVideoDto} from "../video-processor/dto/ProcessVideo.dto";
+import {GenerateImageDto} from "../video-processor/dto/GenerateImage.dto";
 
 @Injectable()
 export class AmqpClientService {
@@ -10,11 +11,19 @@ export class AmqpClientService {
     this.client.connect()
   }
 
-  async sendVideoProcessingRequest(processVideoDto: ProcessVideoDto) {
+  async sendCreateStackRequest(processVideoDto: ProcessVideoDto) {
     const message = new RmqRecordBuilder()
       .setData(processVideoDto)
       .setOptions({persistent: true})
       .build()
-    this.client.emit('video-processing', message)
+    this.client.emit('create-stack', message)
+  }
+
+  public async sendGenerateImageRequest(generateImage: GenerateImageDto) {
+    const message = new RmqRecordBuilder()
+      .setData(generateImage)
+      .setOptions({persistent: true})
+      .build()
+    this.client.emit('generate-image', message)
   }
 }
