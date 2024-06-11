@@ -57,4 +57,25 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    input[type="time"]::-webkit-calendar-picker-indicator{
+        display: none;
+    }
+}
+
+.hide-all-but-first > * > *:not(:first-child) {
+    @apply hidden;
+}
+
+.shimmer {
+    animation: shimmer 1s ease-in-out alternate infinite;
+}
+
+@keyframes shimmer {
+    from {
+        @apply bg-primary/20
+    }
+    to {
+        @appy bg-background
+    }
 }

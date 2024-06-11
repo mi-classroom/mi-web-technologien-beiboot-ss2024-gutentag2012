@@ -1,0 +1,35 @@
+---
+import {listFiles} from "@/lib/file-upload.repo";
+import {DeleteFolderButton} from "./DeleteFolderButton";
+
+const files = await listFiles("root")
+const projects = files.filter(file => !!file.prefix)
+---
+
+
+{
+  projects.length ? (
+    <ul class="list-disc pl-8 space-y-2">
+      {
+        projects.map(file => (
+            <li>
+            <span class="flex flex-row gap-2 items-center">
+              <a
+                  class="text-primary underline font-semibold"
+                  href={`/project/${file.prefix}`}
+              >
+                  {file.prefix?.replace(/\/$/, "")}
+              </a>
+              <DeleteFolderButton
+                  client:visible
+                  project={file.prefix ?? "root"}
+              />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+    ) : (
+    <i class="text-muted-foreground font-medium">No projects found</i>
+    )
+  }

@@ -1,10 +1,10 @@
-import {Injectable, Logger, HttpException, HttpStatus} from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import {MinioService} from 'nestjs-minio-client';
 import {randomUUID} from 'node:crypto'
 import {extname} from "node:path"
 import {EnvService} from "../env/env.service";
 
-type BucketItem = { name?: string; lastModified?: Date; size: number; }
+type BucketItem = { name?: string; lastModified?: Date; size: number; prefix?: string; }
 
 @Injectable()
 export class MinioClientService {
@@ -25,12 +25,24 @@ export class MinioClientService {
     return this.minio.client.getObject(this.minioBucket, filename)
   }
 
-  public async listFiles() {
-    const bucketStream = this.minio.client.listObjects(this.minioBucket)
+  public async getFileStats(filename: string): Promise<{
+    size: number;
+    lastModified: Date;
+  }> {
+    return this.minio.client.statObject(this.minioBucket, filename)
+  }
+
+  public async getPartialFile(filename: string, start: number, end: number) {
+    return this.minio.client.getPartialObject(this.minioBucket, filename, start, end - start + 1)
+  }
+
+  public async listFiles(folder: string) {
+    const bucketStream = this.minio.client.listObjectsV2(this.minioBucket, folder === "root" ? undefined : folder, folder !== "root", "/")
     return new Promise<BucketItem[]>((resolve, reject) => {
       const data: BucketItem[] = []
       bucketStream.on('data', (obj) => {
         data.push({
+          prefix: obj.prefix,
           name: obj.name,
           lastModified: obj.lastModified,
           size: obj.size,
@@ -45,18 +57,20 @@ export class MinioClientService {
     })
   }
 
-  public async uploadVideo(file: Express.Multer.File) {
+  public async uploadVideo(file: Express.Multer.File, options: { prefix?: string, newName?: string }) {
     if (!this.isMimeTypeSupported(file.mimetype)) {
       throw new UnsupportedMimeType(`Unsupported mime type ${file.mimetype}`)
     }
 
-    const fileId = randomUUID();
     const fileExtension = extname(file.originalname);
     const metaData = {
       'Content-Type': file.mimetype,
     };
 
-    const filename = `${fileId}-${Date.now()}${fileExtension}`;
+    const prefix = options.prefix ? `${options.prefix}/` : '';
+    const newName = options.newName ? options.newName : `${randomUUID()}-${Date.now()}`;
+
+    const filename = `${prefix}${newName}${fileExtension}`;
     await this.minio.client.putObject(this.minioBucket, filename, file.buffer, file.size, metaData)
 
     return {
@@ -71,6 +85,15 @@ export class MinioClientService {
 
   private getFileUrl(filename: string, bucket: string): string {
     return `${this.minioEndpoint}:${this.minioPort}/${bucket}/${filename}`
+  }
+
+  public async fileExists(filename: string) {
+    return this.minio.client.statObject(this.minioBucket, filename).then(() => true).catch(() => false)
+  }
+
+  public async deleteFolder(folder: string) {
+    const files = await this.listFiles(folder)
+    await this.minio.client.removeObjects(this.minioBucket, files.map(file => file.name).filter(Boolean) as string[])
   }
 }
 

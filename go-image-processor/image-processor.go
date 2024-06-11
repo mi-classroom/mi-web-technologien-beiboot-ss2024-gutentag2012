@@ -6,17 +6,14 @@ import (
 	"image/png"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
-	"time"
 )
 
 type Changeable interface {
 	Set(x, y int, c color.Color)
 }
 
-func averagePixelValues(outputFolder string, filename string, fromFrames int, toFrames int) (string, string) {
+func averagePixelValues(outputFolder string, outPath string) error {
 	numWorkers := 20
 	filePaths := make(chan string)
 	resultPixels := make(chan []uint32, numWorkers)
@@ -28,32 +25,16 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 		go pixelAdditionWorker(filePaths, &wg, resultPixels)
 	}
 
-	outputFilesAll, err := os.ReadDir(outputFolder)
+	outputFiles, err := os.ReadDir(outputFolder)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error while reading output folder:", err)
+		return err
 	}
 
-	if fromFrames == -1 {
-		fromFrames = 0
-	}
-	if toFrames == -1 {
-		toFrames = len(outputFilesAll)
-	}
-
-	if toFrames > len(outputFilesAll) {
-		toFrames = len(outputFilesAll)
-	}
-
-	if fromFrames > len(outputFilesAll) {
-		fromFrames = len(outputFilesAll) - 1
-	}
-
-	if fromFrames > toFrames {
-		fromFrames = toFrames - 1
-	}
-
-	outputFiles := outputFilesAll[fromFrames:toFrames]
 	for _, outputFile := range outputFiles {
+		if outputFile.IsDir() {
+			continue
+		}
 		filePaths <- outputFolder + "/" + outputFile.Name()
 	}
 	// Close the channel once all files are processed
@@ -61,7 +42,8 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 
 	firstImageFile, err := os.Open(outputFolder + "/" + outputFiles[0].Name())
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error while opening first image file:", err)
+		return err
 	}
 	defer func(firstImageFile *os.File) {
 		err := firstImageFile.Close()
@@ -72,7 +54,8 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 
 	finalImage, err := png.Decode(firstImageFile)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error while decoding first image file:", err)
+		return err
 	}
 
 	// Wait for all workers to finish
@@ -103,23 +86,29 @@ func averagePixelValues(outputFolder string, filename string, fromFrames int, to
 			cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
 		}
 
-		nameParts := strings.Split(filename, ".")
-		name := nameParts[0] + strconv.FormatInt(time.Now().UnixMilli(), 10) + ".png"
-		outPath := "./tmp/" + name
 		outFile, err := os.Create(outPath)
+		defer func(outFile *os.File) {
+			err := outFile.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(outFile)
+
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Error while creating output file:", err)
+			return err
 		}
 
 		err = png.Encode(outFile, finalImage)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Error while encoding output file:", err)
+			return err
 		}
-		return name, outPath
 	} else {
-		log.Fatal("Image could not be written to")
+		log.Println("Was unable to access pix of image")
+		return err
 	}
-	return "", ""
+	return nil
 }
 
 func pixelAdditionWorker(filePaths <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32) {

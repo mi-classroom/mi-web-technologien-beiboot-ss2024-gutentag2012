@@ -1,0 +1,24 @@
+---
+import {DeleteFolderButton} from "./DeleteFolderButton";
+const {stacks, project} = Astro.props
+---
+
+{stacks.length ? (
+  <ul class="list-disc pl-8 space-y-2">
+  {
+    stacks.map((file: string) => (
+        <li>
+            <span class="flex flex-row gap-2 items-center">
+          <a class="text-primary underline font-semibold" href={`/project/${project}/stack/${file}`}>{file}</a>
+            <DeleteFolderButton
+                client:visible
+                project={`${project}${encodeURIComponent("/")}${file}`}
+            />
+            </span>
+      </li>
+    ))
+  }
+</ul>
+  ) : (
+    <i class="text-muted-foreground font-medium">No stacks found</i>
+  )}
