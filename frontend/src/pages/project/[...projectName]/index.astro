@@ -25,26 +25,30 @@ const filePath = `${projectName}${encodeURIComponent("/")}${inputFile}`
     title={projectName}
     description="Project details."
 >
-  <video
-      id="project-video"
-      class="h-[500px]"
-      src={`http://localhost:3001/file-upload/get/${filePath}`}
-      controls
-      preload="auto"
-  />
+  <div class="w-full flex justify-center">
+    <video
+        id="project-video"
+        class="h-[500px]"
+        src={`http://localhost:3001/file-upload/get/${filePath}`}
+        controls
+        preload="auto"
+    />
+  </div>
 
   <h3 class="font-semibold mb-2">Outputs</h3>
 
-  {
-    outputs.length ? (
-        <ImageListCarousel
-            client:visible
-            images={outputs}
-        />
-    ) : (
-        <p class="text-muted-foreground">No outputs available.</p>
-    )
-  }
+  <div class="px-8">
+    {
+      outputs.length ? (
+          <ImageListCarousel
+              client:visible
+              images={outputs}
+          />
+      ) : (
+          <p class="text-muted-foreground">No outputs available.</p>
+      )
+    }
+  </div>
 
   <h3 class="font-semibold mb-2 mt-4">Image Stacks</h3>
 
