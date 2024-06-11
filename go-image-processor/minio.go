@@ -31,22 +31,7 @@ func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucke
 	_, err := os.Stat(cachePath)
 	// There is a cached local file
 	if err == nil {
-		cacheFile, err := os.ReadFile(cachePath)
-		if err != nil {
-			return "", err
-		}
-		fileDir := filepath.Dir(filePath)
-		err = os.MkdirAll(fileDir, os.ModePerm)
-		if err != nil {
-			return "", err
-		}
-
-		err = os.WriteFile(filePath, cacheFile, os.ModePerm)
-		if err != nil {
-			return "", err
-		}
-
-		return filePath, nil
+		return cachePath, nil
 	}
 
 	err = minioClient.FGetObject(ctx, bucketName, objectName, filePath, minio.GetObjectOptions{})
@@ -75,19 +60,20 @@ func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucke
 	return filePath, nil
 }
 
-func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectNames []string, prefix string) error {
+func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectNames []string, prefix string) ([]string, error) {
 	maxDownloadWorkers := 30
 	guard := make(chan struct{}, maxDownloadWorkers)
-	var waitGroup sync.WaitGroup
+	downloadedFiles := make(chan string, len(objectNames))
 
 	retryFiles := []string{}
 
 	for _, objectName := range objectNames {
-		waitGroup.Add(1)
 		guard <- struct{}{} // would block if guard channel is already filled
 		go func() {
-			defer waitGroup.Done()
-			_, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName, prefix)
+			filepath, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName, prefix)
+
+			downloadedFiles <- filepath
+
 			if err != nil {
 				log.Println("Error while downloading file ", objectName, " from Minio:", err)
 				retryFiles = append(retryFiles, objectName)
@@ -97,11 +83,12 @@ func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, buck
 	}
 
 	for _, objectName := range retryFiles {
-		waitGroup.Add(1)
 		guard <- struct{}{}
 		go func() {
-			defer waitGroup.Done()
-			_, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName, prefix)
+			filepath, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName, prefix)
+
+			downloadedFiles <- filepath
+
 			if err != nil {
 				log.Println("Error while retrying to download file ", objectName, " from Minio:", err)
 			}
@@ -109,8 +96,14 @@ func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, buck
 		}()
 	}
 
-	waitGroup.Wait()
-	return nil
+	downloadedFilesSlice := []string{}
+	for i := 0; i < len(objectNames); i++ {
+		downloadedFilesSlice = append(downloadedFilesSlice, <-downloadedFiles)
+	}
+	close(downloadedFiles)
+	close(guard)
+
+	return downloadedFilesSlice, nil
 
 }
 
