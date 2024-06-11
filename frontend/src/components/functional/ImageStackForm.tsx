@@ -8,9 +8,7 @@ import {z} from "zod";
 import {useEffect, useMemo} from "react";
 import {useSignal} from "@preact/signals-react";
 import {createProjectStack, listenToProgress} from "@/lib/video-processor.repo.ts";
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogHeader, AlertDialogTrigger } from "../ui/alert-dialog";
-import { Progress } from "../ui/progress";
-import { ProgressDialog, useProgressDialog } from "./ProgressDialog";
+import {ProgressDialog, useProgressDialog} from "./ProgressDialog";
 
 type SrcVideoProps = {
   duration: string
@@ -27,7 +25,7 @@ const validateTimeStringLessThan = (duration?: string | null) => (value?: string
   return !(hours === hoursCompare && minutes === minutesCompare && seconds > secondsCompare)
 }
 
-export function ImageStackForm({project, stacks}: {project:string, stacks: string[]}) {
+export function ImageStackForm({project, stacks}: { project: string, stacks: string[] }) {
   const usedVariables = useMemo(() => stacks.map(stack => {
     const [_, scale, frameRate, from, to] = stack.split("--")
     return {
@@ -56,16 +54,17 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
         listenToProgress("create-stack", identifier, data => {
           progressDialogData.value = data
           if(data.CurrentStep !== data.MaxSteps) return
-
-          const projectName = project.split("/")[0]
-          window.location.assign(`/project/${projectName}/stack/output--scale=${values.scale}--frameRate=${values.frameRate}--from=${values.from.replaceAll(":", "-")}--to=${values.to.replaceAll(":", "-")}`)
-          progressDialogData.value = null
           r(undefined)
         })
       })
     },
     validator: values => {
-      const stackAlreadyUsed = usedVariables.some(({scale, from, to, frameRate}) => values.scale === scale && values.from === from && values.to === to && values.frameRate === frameRate)
+      const stackAlreadyUsed = usedVariables.some(({
+                                                     scale,
+                                                     from,
+                                                     to,
+                                                     frameRate
+                                                   }) => values.scale === scale && values.from === from && values.to === to && values.frameRate === frameRate)
       return stackAlreadyUsed && "This image stack already exists"
     }
   })
@@ -84,7 +83,7 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
       }
     }
 
-    if(isNaN(video.duration)) {
+    if (isNaN(video.duration)) {
       video.onloadedmetadata = setDuration
     } else {
       setDuration()
@@ -93,7 +92,17 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
 
   return (
     <div className="flex-col flex gap-2">
-      <ProgressDialog label="Video Processing" description="Currently processing project video and extracting frames. Be aware that this might take a while depending on the input." data={progressDialogData} />
+      <ProgressDialog
+        label="Video Processing"
+        description="Currently processing project video and extracting frames. Be aware that this might take a while depending on the input."
+        data={progressDialogData}
+        onDone={() => {
+          const values = form.json.peek()
+          const projectName = project.split("/")[0]
+          window.location.assign(`/project/${projectName}/stack/output--scale=${values.scale}--frameRate=${values.frameRate}--from=${values.from.replaceAll(":", "-")}--to=${values.to.replaceAll(":", "-")}`)
+          progressDialogData.value = null
+        }}
+      />
     
       <form.FormProvider>
       <form
@@ -178,7 +187,7 @@ export function ImageStackForm({project, stacks}: {project:string, stacks: strin
           Create Image Stack
         </Button>
 
-        <ErrorTextForm />
+        <ErrorTextForm/>
       </form>
         </form.FormProvider>
     </div>
