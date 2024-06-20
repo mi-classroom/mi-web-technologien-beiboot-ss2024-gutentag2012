@@ -152,7 +152,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		}
 	}
 
-	err = downloadFilesFromMinio(ctx, minioClient, env.MinioBucketName, fileNames, "generate-image")
+	filePaths, err := downloadFilesFromMinio(ctx, minioClient, env.MinioBucketName, fileNames, "generate-image")
 	if err != nil {
 		log.Println("Error while downloading frames from Minio:", err)
 		return err
@@ -170,7 +170,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 	}
 
 	outPath := "./tmp/generate-image/" + data.Project + "/" + data.Stack + "/outputs/" + frameString + ".png"
-	err = averagePixelValues("./tmp/generate-image/"+data.Project+"/"+data.Stack, outPath)
+	err = averagePixelValues(filePaths, outPath)
 	if err != nil {
 		log.Println("Error while averaging pixel values:", err)
 		return err

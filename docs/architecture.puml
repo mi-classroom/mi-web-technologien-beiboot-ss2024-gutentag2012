@@ -1,0 +1,23 @@
+@startuml
+skinparam linetype ortho
+skinparam nodesep 100
+
+[Go Image Processor]
+[Backend]
+[Frontend]
+
+cloud RabbitMQ
+node FFmpeg
+database "Minio"
+
+[Frontend] <--> [Backend] : HTTP Requests
+
+[Backend] <--> [Minio] : S3 API
+[Backend] -r-> [RabbitMQ] : Publishes messages
+[RabbitMQ] -r-> [Go Image Processor] : Consumes messages
+
+[Go Image Processor] --> [Backend] : HTTP Requests
+[Go Image Processor] --> [FFmpeg] : Executes commands
+[Go Image Processor] <--> [Minio] : S3 API
+
+@enduml

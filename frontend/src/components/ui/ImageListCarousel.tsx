@@ -15,12 +15,14 @@ export function ImageListCarousel({images}: ImageListCarouselProps) {
             key={file}
             className="basis-1/2 relative"
           >
-            <img
-              className={`border-4 rounded`}
-              src={`http://localhost:3001/file-upload/get/${file}`}
-              alt="thing"
-              loading="lazy"
-            />
+            <a href={`http://localhost:3001/file-upload/get/${file}`} target="_blank">
+              <img
+                className={`border-4 rounded`}
+                src={`http://localhost:3001/file-upload/get/${file}`}
+                alt="thing"
+                loading="lazy"
+              />
+            </a>
             <Button type="button" variant="destructive" className="absolute top-4 right-4" onClick={() => deleteFolder(file).then(() => window.location.reload())}>Delete</Button>
           </CarouselItem>
         ))}

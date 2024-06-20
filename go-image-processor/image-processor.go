@@ -13,34 +13,25 @@ type Changeable interface {
 	Set(x, y int, c color.Color)
 }
 
-func averagePixelValues(outputFolder string, outPath string) error {
-	numWorkers := 20
-	filePaths := make(chan string)
+func averagePixelValues(filePaths []string, outPath string) error {
+	numWorkers := 35
+	filePathChannel := make(chan string)
 	resultPixels := make(chan []uint32, numWorkers)
 
 	var wg sync.WaitGroup
 	wg.Add(numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
-		go pixelAdditionWorker(filePaths, &wg, resultPixels)
+		go pixelAdditionWorker(filePathChannel, &wg, resultPixels)
 	}
 
-	outputFiles, err := os.ReadDir(outputFolder)
-	if err != nil {
-		log.Println("Error while reading output folder:", err)
-		return err
-	}
-
-	for _, outputFile := range outputFiles {
-		if outputFile.IsDir() {
-			continue
-		}
-		filePaths <- outputFolder + "/" + outputFile.Name()
+	for _, outputFile := range filePaths {
+		filePathChannel <- outputFile
 	}
 	// Close the channel once all files are processed
-	close(filePaths)
+	close(filePathChannel)
 
-	firstImageFile, err := os.Open(outputFolder + "/" + outputFiles[0].Name())
+	firstImageFile, err := os.Open(filePaths[0])
 	if err != nil {
 		log.Println("Error while opening first image file:", err)
 		return err
@@ -72,7 +63,7 @@ func averagePixelValues(outputFolder string, outPath string) error {
 			}
 		}
 
-		totalImages := len(outputFiles)
+		totalImages := len(filePaths)
 		for pixelIndex := 0; pixelIndex < len(combinedPixels); pixelIndex += 4 {
 			trackIndex := pixelIndex / 4
 			x := trackIndex % width
@@ -111,12 +102,12 @@ func averagePixelValues(outputFolder string, outPath string) error {
 	return nil
 }
 
-func pixelAdditionWorker(filePaths <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32) {
+func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32) {
 	defer wg.Done()
 
 	var matrix []uint32
 
-	for filePath := range filePaths {
+	for filePath := range filePathChannel {
 		file, err := os.Open(filePath)
 		if err != nil {
 			log.Fatal(err)

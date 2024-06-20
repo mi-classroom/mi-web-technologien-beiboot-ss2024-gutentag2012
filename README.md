@@ -1,4 +1,3 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/gQyBcnrC)
 # Web Technologien // begleitendes Projekt Sommersemester 2024
 Zum Modul Web Technologien gibt es ein begleitendes Projekt. Im Rahmen dieses Projekts werden wir von Veranstaltung zu Veranstaltung ein Projekt sukzessive weiter entwickeln und uns im Rahmen der Veranstaltung den Fortschritt anschauen, Code Reviews machen und Entwicklungsschritte vorstellen und diskutieren.
 
@@ -8,12 +7,66 @@ Warum ist das cool? Bilder mit Langzeitbelichtung sind gar nicht so einfach zu e
 
 Dokumentieren Sie in diesem Beibootprojekt Ihre Entscheidungen gewissenhaft unter Zuhilfenahme von [Architectual Decision Records](https://adr.github.io) (ADR).
 
-Hier ein paar ADR Beispiele aus dem letzten Semestern:
-- https://github.com/mi-classroom/mi-web-technologien-beiboot-ss2022-Moosgloeckchen/tree/main/docs/decisions
-- https://github.com/mi-classroom/mi-web-technologien-beiboot-ss2022-mweiershaeuser/tree/main/adr
-- https://github.com/mi-classroom/mi-web-technologien-beiboot-ss2022-twobiers/tree/main/adr
-
 Halten Sie die Anwendung, gerade in der Anfangsphase möglichst einfach, schlank und leichtgewichtig (KISS).
+
+## Architektur
+
+Die Anwendung besteht aus den folgenden Komponenten:
+
+1. Zentrales Backend
+   - Verbindung zu Microservices + Datenbank
+   - Technologie: **NestJS**
+2. Go Service
+    - Verarbeitung der Bilder und Videos
+    - Technologie: **Go**
+3. Frontend
+    - Anzeige der Projekte
+    - Technologie: **Astro** + **React**
+
+Folgende Services werden zusätzlich verwendet:
+
+1. Minio
+    - Speicherung der Projekte
+2. RabbitMQ
+    - Kommunikation zwischen Go Service und Backend
+3. FFmpeg
+    - Verarbeitung der Videos
+
+![Architektur](./docs/architecture.svg)
+
+## Lokale Entwicklung
+
+Für die lokale Entwicklung werden folgende Tools benötigt:
+
+- Docker
+- Docker Compose
+- Node.js
+- Pnpm
+- Go
+
+Zum Starten der Anwendung müssen folgende Schritte durchgeführt werden (Für jeden Service sollte ein neues Terminal geöffnet werden):
+
+1. Minio + RabbitMQ
+    ```bash
+    docker-compose up -d
+    ```
+2. Backend
+    ```bash
+    cd backend
+    pnpm install
+    pnpm dev
+    ```
+3. Go Service
+    ```bash
+    cd go-image-processor
+    go run .
+    ```
+4. Frontend
+    ```bash
+    cd frontend
+    pnpm install
+    pnpm dev
+    ```
 
 ## Zeitaufwand
 
