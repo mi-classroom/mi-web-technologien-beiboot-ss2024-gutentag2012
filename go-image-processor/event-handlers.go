@@ -19,7 +19,7 @@ type CreateStackMessage struct {
 	ToTime    string `json:"to"`
 }
 
-const MAX_STEPS_STACK = 3
+const MaxStepsStack = 3
 
 func createStack(ctx context.Context, env Env, minioClient *minio.Client, data CreateStackMessage) error {
 	project := strings.Split(data.Filename, "/input.")[0]
@@ -29,7 +29,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	err := sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "create-stack",
-		MaxSteps:    MAX_STEPS_STACK,
+		MaxSteps:    MaxStepsStack,
 		CurrentStep: 0,
 		Message:     "Downloading video file...",
 	})
@@ -46,7 +46,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "create-stack",
-		MaxSteps:    MAX_STEPS_STACK,
+		MaxSteps:    MaxStepsStack,
 		CurrentStep: 1,
 		Message:     "Extracting frames from video...",
 	})
@@ -71,7 +71,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "create-stack",
-		MaxSteps:    MAX_STEPS_STACK,
+		MaxSteps:    MaxStepsStack,
 		CurrentStep: 2,
 		Message:     "Uploding frames to server...",
 	})
@@ -89,7 +89,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "create-stack",
-		MaxSteps:    MAX_STEPS_STACK,
+		MaxSteps:    MaxStepsStack,
 		CurrentStep: 3,
 		Message:     "Finished process.",
 	})
@@ -110,24 +110,27 @@ type GenerateImageMessage struct {
 	Project string `json:"project"`
 	Stack   string `json:"stack"`
 	Frames  []int  `json:"frames"`
+	Weights []int  `json:"weights"`
 }
 
-const MAX_STEPS_IMAGE = 3
+const MaxStepsImage = 3
 
 func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data GenerateImageMessage) error {
 	log.Println("Generating image for project:", data.Project, "and stack:", data.Stack)
 
-	strSlice := make([]string, len(data.Frames))
+	frameStrings := make([]string, len(data.Frames))
 	for i, num := range data.Frames {
-		strSlice[i] = strconv.Itoa(num)
+		frameStrings[i] = strconv.Itoa(num)
 	}
-	frameString := strings.Join(strSlice, "-")
+	frameString := strings.Join(frameStrings, "-")
+
 	identifier := fmt.Sprintf("%s-%s-%s", data.Project, data.Stack, frameString)
+	outFileName := fmt.Sprintf("%s", frameString)
 
 	err := sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "generate-image",
-		MaxSteps:    MAX_STEPS_IMAGE,
+		MaxSteps:    MaxStepsImage,
 		CurrentStep: 0,
 		Message:     "Downloading frames...",
 	})
@@ -142,13 +145,15 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 	}
 
 	// Download all frames of this project and stack that are requested within the frames
-	fileNames := []string{}
+	var fileNames []string
+	totalUsedWeights := 0
 	for i := 0; i < len(data.Frames)-1; i += 2 {
 		start := data.Frames[i]
 		end := data.Frames[i+1]
 
 		for frame := start; frame <= end; frame++ {
-			fileNames = append(fileNames, fmt.Sprintf("%s/%s/ffout%05d.png", data.Project, data.Stack, frame))
+			totalUsedWeights += data.Weights[frame-1]
+			fileNames = append(fileNames, fmt.Sprintf("%s/%s/%05d.png", data.Project, data.Stack, frame))
 		}
 	}
 
@@ -161,7 +166,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "generate-image",
-		MaxSteps:    MAX_STEPS_IMAGE,
+		MaxSteps:    MaxStepsImage,
 		CurrentStep: 1,
 		Message:     "Generating image...",
 	})
@@ -169,8 +174,8 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		log.Println("Could not message API")
 	}
 
-	outPath := "./tmp/generate-image/" + data.Project + "/" + data.Stack + "/outputs/" + frameString + ".png"
-	err = averagePixelValues(filePaths, outPath)
+	outPath := "./tmp/generate-image/" + data.Project + "/" + data.Stack + "/outputs/" + outFileName + ".png"
+	err = averagePixelValues(filePaths, outPath, data.Weights, totalUsedWeights)
 	if err != nil {
 		log.Println("Error while averaging pixel values:", err)
 		return err
@@ -179,7 +184,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "generate-image",
-		MaxSteps:    MAX_STEPS_IMAGE,
+		MaxSteps:    MaxStepsImage,
 		CurrentStep: 2,
 		Message:     "Uploading image...",
 	})
@@ -187,7 +192,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		log.Println("Could not message API")
 	}
 
-	minioOutputFolder := data.Project + "/" + data.Stack + "/outputs/" + frameString + ".png"
+	minioOutputFolder := data.Project + "/" + data.Stack + "/outputs/" + outFileName + ".png"
 	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, outPath)
 	if err != nil {
 		log.Println("Error while uploading image to Minio:", err)
@@ -197,7 +202,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
 		Identifier:  identifier,
 		Event:       "generate-image",
-		MaxSteps:    MAX_STEPS_IMAGE,
+		MaxSteps:    MaxStepsImage,
 		CurrentStep: 3,
 		Message:     "Finished process.",
 	})

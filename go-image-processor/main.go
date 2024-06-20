@@ -99,5 +99,5 @@ func main() {
 func getFrameOutputPathFromLocalPath(localPath string) (string, string) {
 	paths := strings.Split(localPath, ".")
 	folder := "." + paths[1] + "-frames"
-	return folder, folder + "/ffout%5d.png"
+	return folder, folder + "/%5d.png"
 }
