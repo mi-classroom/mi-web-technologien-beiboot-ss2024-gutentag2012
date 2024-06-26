@@ -9,12 +9,13 @@ import {batch, effect, useComputed, useSignalEffect} from "@preact/signals-react
 import {ErrorText, ErrorTextForm} from "@/components/ui/ErrorText.tsx";
 import {createImageFromStack, listenToProgress} from "@/lib/video-processor.repo.ts";
 import {ProgressDialog, useProgressDialog} from "./ProgressDialog";
+import {WeightPicker} from "@/components/functional/WeightPicker.tsx";
 
 /**
  * @useSignals
  */
 const CarouselImage = ({file, i, onClick}: { file: string; i: number, onClick?: () => void }) => {
-  const form = useFormContext<{ frames: number[] }>()
+  const form = useFormContext<{ frames: number[], weights: number[] }>()
 
   const isFrameIncluded = useCallback((frame: number) => {
     const frames = form.json.value.frames
@@ -29,6 +30,8 @@ const CarouselImage = ({file, i, onClick}: { file: string; i: number, onClick?: 
     })
   }, [form])
 
+  const weight = useComputed(() => form.data.peek().weights.value[i].data.value)
+
   return (<>
     <img
       className={`border-4 rounded cursor-pointer ${isFrameIncluded(i + 1) ? "border-primary" : "border-none"}`}
@@ -39,6 +42,9 @@ const CarouselImage = ({file, i, onClick}: { file: string; i: number, onClick?: 
     />
           <p className={`absolute top-0 left-4 bg-card text-card-foreground text-xs font-bold p-2 border-t-4 border-l-4 rounded ${isFrameIncluded(i + 1) ? "border-primary" : "border-none"}`}>
             {i + 1}
+          </p>
+          <p className={`absolute top-0 right-0 bg-card text-card-foreground text-xs font-bold p-2 border-t-4 border-r-4 rounded ${isFrameIncluded(i + 1) ? "border-primary" : "border-none"}`}>
+            {weight}X
           </p>
     </>)
 }
@@ -74,7 +80,8 @@ export function ImageGeneratorForm({files, existingOutputs, project, stack}: {
   const [api, setApi] = useState<CarouselApi>()
   const form = useForm({
     defaultValues: {
-      frames: [1, files.length]
+      frames: [1, files.length],
+      weights: Array.from({length: files.length}, () => 1)
     },
     onSubmit: async (values) => {
       await createImageFromStack(project, stack, values);
@@ -258,6 +265,9 @@ export function ImageGeneratorForm({files, existingOutputs, project, stack}: {
               <FrameBlockers max={files.length}/>
             </SliderForm>
           </div>
+
+          <WeightPicker maxWeight={Math.round(files.length / 5)} />
+
           <Label className="mt-4 mb-2 inline-block">Frames to include</Label>
           <div className="flex flex-col gap-2">
             {api && <FrameInputs api={api} max={files.length}/>}

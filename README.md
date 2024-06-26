@@ -85,4 +85,7 @@ Zum Starten der Anwendung müssen folgende Schritte durchgeführt werden (Für j
 | Real Time Progress Indication               | 3h          |
 | Total Issue #2                              | 16h         |
 |                                             |             |
-| Total                                       | 32h         |
+| Weight einfügen                             | 2h          |
+| Total Issue #3                              | 2h          |
+|                                             |             |
+| Total                                       | 34h         |
