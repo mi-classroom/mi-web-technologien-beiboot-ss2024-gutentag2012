@@ -8,7 +8,6 @@ export const envSchema = z.object({
   MINIO_ACCESS_KEY: z.string().min(1),
   MINIO_SECRET_KEY: z.string().min(1),
   RABBITMQ_URL: z.string().min(1),
-  VIDEO_PROCESSOR_QUEUE: z.string().min(1),
 })
 
 export type Env = z.infer<typeof envSchema>;

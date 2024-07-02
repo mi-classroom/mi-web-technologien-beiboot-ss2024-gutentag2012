@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"strings"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type AmqpMessage struct {
@@ -19,9 +20,9 @@ func main() {
 
 	minio := setupMinioClient(env)
 
-	amqpConnection := setupAMQPConnection(env)
+	amqpConnection := setupAMQPConnection(env.AMQPUrl)
 	amqpChannel := setupAMQPChannel(amqpConnection)
-	videoProcessorQueue := setupAMQPQueue(amqpChannel, env.VideoProcessorQueue)
+	videoProcessorQueue := setupAMQPQueue(amqpChannel, "main")
 
 	defer func(amqpConnection *amqp.Connection) {
 		err := amqpConnection.Close()
