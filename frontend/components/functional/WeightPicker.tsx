@@ -3,7 +3,7 @@ import {useCallback, useLayoutEffect, useState} from "react";
 import {effect, useSignal} from "@preact/signals-react";
 import {useField, useFormContext} from "@formsignals/form-react";
 
-const height = 300;
+const height = 150;
 const marginLeft = 8;
 const marginRight = 8;
 const marginTop = 20;
@@ -97,7 +97,7 @@ export const WeightPicker = ({maxWeight}: { maxWeight: number }) => {
       }}
     >
       <g className="text-muted-foreground">
-        {y.ticks(10).map(tick => (
+        {y.ticks(6).map(tick => (
           <g key={tick}>
             <line
               x1={marginLeft + 32}
