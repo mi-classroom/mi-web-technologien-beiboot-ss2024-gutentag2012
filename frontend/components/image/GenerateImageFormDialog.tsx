@@ -35,6 +35,8 @@ import {
   DialogSignal,
   DialogTitle
 } from "@/components/ui/dialog";
+import {Select, SelectContent, SelectForm, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
 
 type CreateImageFormDrawerProps = {
   projects: Project[]
@@ -51,7 +53,6 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
     if (!carouselApi) return
     carouselApi.scrollTo(currentFocus - 2)
   });
-  const sliderFocus = useComputed(() => [focussedImage.value])
 
   useEffect(() => {
     if (!carouselApi) return
@@ -61,9 +62,10 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
     })
   }, [carouselApi]);
 
-  const selectedStack = useComputed(() => {
-    if (!form.json.value.stack) return null
-    return projects.flatMap(p => p.stacks).find(s => s.name === form.json.value.stack)
+  const selectedProject = useComputed(() => {
+    const selection = form.data.value.project?.value
+    if(!selection) return
+    return projects.find(p => p.name === selection)
   })
 
   useSignalEffect(() => {
@@ -77,11 +79,9 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
   useEffect(() => {
     form.updateOptions({
       defaultValues: {
-        project: projects[0].name,
-        stack: projects[0].stacks[0].name,
         frames: [1, availableImages.length],
         weights: Array.from({length: availableImages.length}, () => 1)
-      },
+      } as any,
       onSubmit: async values => {
         progressDialogData.value = {
           CurrentStep: 0,
@@ -99,7 +99,11 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
           listenToProgress("generate-image", identifier, data => {
             updateProgress(data)
             if (data.CurrentStep !== data.MaxSteps) return
+            serverRevalidateTag("projects")
             r(undefined)
+          }).then(async () => {
+            isGenerateImageDrawerOpen.value = false
+            await form.reset()
           })
         })
       }
@@ -120,7 +124,7 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
         if(!newOpen) generateImageForm.reset()
       }}
     >
-      <DialogContent className="absolute max-w-[80vw]">
+      <DialogContent className="max-w-[80vw]">
         <DialogHeader>
           <DialogTitle>Generate new Image</DialogTitle>
           <DialogDescription>Here you can generate a new image from a stack.</DialogDescription>
@@ -137,6 +141,46 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
               void generateImageForm.handleSubmit()
             }}
           >
+            <form.FieldProvider name="project">
+              <Label>Project</Label>
+              <SelectForm>
+                <SelectTrigger>
+                  <SelectValue/>
+                </SelectTrigger>
+                <SelectContent>
+                  {
+                    projects.map(project => (
+                      <SelectItem
+                        key={project.name}
+                        value={project.name}
+                      >
+                        {project.name}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </SelectForm>
+            </form.FieldProvider>
+            {selectedProject.value && <form.FieldProvider name="stack">
+              <Label>Stack</Label>
+              <SelectForm>
+                <SelectTrigger>
+                  <SelectValue/>
+                </SelectTrigger>
+                <SelectContent>
+                  {
+                    selectedProject.value.stacks.map(stack => (
+                      <SelectItem
+                        key={stack.name}
+                        value={stack.name}
+                      >
+                        {stack.name}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </SelectForm>
+            </form.FieldProvider>}
             {/* TODO Add Preview Slider */}
             {/*<div className="mx-4 my-2">*/}
             {/*  <SliderSignal value={sliderFocus} min={0} max={availableImages.length} onValueChange={v => focussedImage.value = v[0]} />*/}
@@ -145,7 +189,7 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
             <Carousel
               setApi={setCarouselApi}
               opts={{dragFree: true}}
-              className="mx-4"
+              className="mx-4 mt-4"
               onChange={i => console.log(i)}
               onFocus={e => console.log(e)}
             >
@@ -179,7 +223,7 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
               }}
               validateOnNestedChange
             >
-              <WeightPicker maxWeight={Math.round(availableImages.length / 5)}/>
+              <WeightPicker maxWeight={Math.round(availableImages.length / 3)}/>
               <SliderForm
                 min={1}
                 max={availableImages.length}
