@@ -104,7 +104,7 @@ export function CreateStackFormDialog({projects}: CreateStackFormDrawerProps) {
         if(!newOpen) createStackForm.reset()
       }}
     >
-      <DialogContent className="absolute max-w-3xl">
+      <DialogContent className="max-w-3xl">
       <form
         onSubmit={async e => {
           e.preventDefault()
