@@ -10,6 +10,7 @@ import {APP_PIPE} from "@nestjs/core";
 import {ZodValidationPipe} from "nestjs-zod";
 import { ImageResultModule } from './image-result/image-result.module';
 import {EventEmitterModule} from "@nestjs/event-emitter";
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import {EventEmitterModule} from "@nestjs/event-emitter";
     AmqpClientModule,
     VideoProcessorModule,
     ImageResultModule,
+    ProjectsModule,
   ],
   providers: [
     {
