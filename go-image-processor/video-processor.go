@@ -32,3 +32,18 @@ func splitVideoIntoFrames(ffmpegPath string, input string, output string, size i
 	cmd := exec.Command(ffmpegPath, args...)
 	return cmd.Run()
 }
+
+func splitThumbnailFromVideo(ffmpegPath string, input string, output string) error {
+	args := []string{
+		"-i", input,
+		"-vframes", "1",
+		"-an",
+		"-ss", "00:00:01",
+		"-vf", "scale=640:-1",
+	}
+
+	args = append(args, output)
+
+	cmd := exec.Command(ffmpegPath, args...)
+	return cmd.Run()
+}

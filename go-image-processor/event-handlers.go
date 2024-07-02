@@ -55,7 +55,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	}
 
 	outputFolder, outputPath := getFrameOutputPathFromLocalPath(localPath)
-	err = os.Mkdir(outputFolder, os.ModePerm)
+	err = os.MkdirAll(outputFolder, os.ModePerm)
 	if err != nil {
 		log.Println("Error while creating output folder:", err)
 		return err
@@ -211,6 +211,48 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 	}
 
 	err = os.RemoveAll("./tmp/generate-image/" + data.Project)
+	if err != nil {
+		log.Println("Error while removing project folder:", err)
+		return err
+	}
+	log.Println("Done removing project folder.")
+	return nil
+}
+
+type GenerateThumbnailMessage struct {
+	Project string `json:"project"`
+	File    string `json:"file"`
+}
+
+func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, data GenerateThumbnailMessage) error {
+	log.Println("Generating thumbnail for project:", data.Project)
+
+	err := os.MkdirAll("./tmp/generate-thumbnail/"+data.Project, os.ModePerm)
+	if err != nil {
+		log.Println("Error while creating image-gen folder:", err)
+		return err
+	}
+
+	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Project+"/"+data.File, "generate-thumbnail")
+	if err != nil {
+		log.Println("Error while downloading file from Minio:", err)
+		return err
+	}
+
+	err = splitThumbnailFromVideo(env.FfmpegPath, localPath, "./tmp/generate-thumbnail/"+data.Project+"/thumbnail.png")
+	if err != nil {
+		log.Println("Error while generating thumbnail:", err)
+		return err
+	}
+
+	minioOutputFolder := data.Project + "/thumbnail.png"
+	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, "./tmp/generate-thumbnail/"+data.Project+"/thumbnail.png")
+	if err != nil {
+		log.Println("Error while uploading thumbnail to Minio:", err)
+		return err
+	}
+
+	err = os.RemoveAll("./tmp/generate-thumbnail/" + data.Project)
 	if err != nil {
 		log.Println("Error while removing project folder:", err)
 		return err

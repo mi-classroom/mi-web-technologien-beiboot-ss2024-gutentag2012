@@ -86,6 +86,18 @@ func main() {
 				if err != nil {
 					log.Println("Error while processing message", err)
 				}
+			case "generate-thumbnail":
+				messageData := GenerateThumbnailMessage{}
+				err := json.Unmarshal(message.Data, &messageData)
+				if err != nil {
+					log.Println("Error while parsing message", err)
+					continue
+				}
+
+				err = generateThumbnail(ctx, env, minio, messageData)
+				if err != nil {
+					log.Println("Error while processing message", err)
+				}
 			default:
 				log.Fatal("Unknown pattern")
 			}
