@@ -7,7 +7,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import {Button} from "@/components/ui/button";
+import {Button, ButtonSignal} from "@/components/ui/button";
 import {createProjectForm, isCreateProjectDrawerOpen} from "@/components/project/project.signals";
 import {useRouter} from "next/navigation";
 import {FileUploadField} from "@/components/functional/FileUploadFIeld";
@@ -27,11 +27,15 @@ import {
   DialogSignal,
   DialogTitle
 } from "@/components/ui/dialog";
+import { useComputed } from "@preact/signals-react";
 
+// TODO Add loading screen here
 export function CreateProjectFormDialog() {
   const router = useRouter()
   const form = useFormWithComponents(createProjectForm)
   const fileUpload = useFileUpload(createProjectForm.data.peek().projectFile)
+
+  const isSubmitDisabled = useComputed(() => !form.canSubmit.value || fileUpload.isUploading.value || fileUpload.isFileUploaded.value)
 
   return (
     <DialogSignal
@@ -41,7 +45,7 @@ export function CreateProjectFormDialog() {
         if(!newOpen) createProjectForm.reset()
       }}
     >
-        <DialogContent className="absolute max-w-3xl">
+        <DialogContent className="max-w-3xl">
           <form
             onSubmit={async e => {
               e.preventDefault()
@@ -105,12 +109,12 @@ export function CreateProjectFormDialog() {
             </div>
 
             <DialogFooter className="mt-4">
-              <Button
+              <ButtonSignal
                 type="submit"
-                disabled={!form.canSubmit.value || fileUpload.isUploading.value || fileUpload.isFileUploaded.value}
+                disabled={isSubmitDisabled}
               >
                 Create Project{fileUpload.progressText}
-              </Button>
+              </ButtonSignal>
               <DrawerClose asChild>
                 <Button
                   type="button"
