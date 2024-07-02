@@ -26,4 +26,12 @@ export class AmqpClientService {
       .build()
     this.client.emit('generate-image', message)
   }
+
+  public async sendGenerateThumbnailRequest(project: string, file: string) {
+    const message = new RmqRecordBuilder()
+      .setData({project, file})
+      .setOptions({persistent: true})
+      .build()
+    this.client.emit('generate-thumbnail', message)
+  }
 }
