@@ -105,7 +105,7 @@ export function Commander({projects}: CommanderProps) {
               }}
             >
               <PlusIcon className="mr-2 h-4 w-4"/>
-              <span>Create Stack</span>
+              <span>Add Stack</span>
               <CommandShortcut>alt + S</CommandShortcut>
             </CommandItem>
             <CommandItem

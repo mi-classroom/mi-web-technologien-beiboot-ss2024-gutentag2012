@@ -113,7 +113,7 @@ export function CreateStackFormDialog({projects}: CreateStackFormDrawerProps) {
         }}
       >
         <DialogHeader>
-          <DialogTitle>Create new Stack</DialogTitle>
+          <DialogTitle>Add new Stack</DialogTitle>
           <DialogDescription>Here you can split a project file into several frames.</DialogDescription>
         </DialogHeader>
 
@@ -220,7 +220,7 @@ export function CreateStackFormDialog({projects}: CreateStackFormDrawerProps) {
           type="submit"
           disabled={!form.canSubmit.value}
         >
-          Create Stack
+          Add Stack
         </Button>
         <DrawerClose asChild>
           <Button
