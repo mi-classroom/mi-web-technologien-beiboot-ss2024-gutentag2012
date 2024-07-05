@@ -1,6 +1,6 @@
 import * as d3 from "d3"
 import {useCallback, useLayoutEffect, useState} from "react";
-import {effect, useSignal} from "@preact/signals-react";
+import {effect, Signal, useSignal} from "@preact/signals-react";
 import {useField, useFormContext} from "@formsignals/form-react";
 
 const height = 150;
@@ -9,7 +9,7 @@ const marginRight = 8;
 const marginTop = 20;
 const marginBottom = 20;
 
-export const WeightPicker = ({maxWeight}: { maxWeight: number }) => {
+export const WeightPicker = ({maxWeight, focussedImage}: { focussedImage: Signal<number>, maxWeight: number }) => {
   const form = useFormContext<{ weights: number[], frames: number[] }>()
   const field = useField(form, "weights")
 
@@ -72,6 +72,7 @@ export const WeightPicker = ({maxWeight}: { maxWeight: number }) => {
       if (dragEffectUnsub) (dragEffectUnsub as () => void)();
       dragEffectUnsub = effect(() => {
         field.handleChange(dataBeforeDrag.map((d, j) => {
+          focussedImage.value = i + 1
           const distance = Math.abs(i - j);
           if (distance > rangeSignal.value) return d;
           const easInOut = Math.cos(distance * Math.PI / (2 * rangeSignal.value));
