@@ -37,10 +37,6 @@ const generateForStack = (stack: Stack) => () => {
 }
 
 export function StackTable({stacks, className}: StackTableProps) {
-  if (!stacks.length) {
-    return <p className="text-muted-foreground text-center mt-4">No stacks found</p>
-  }
-
   return (
     <Card className={className}>
       <CardHeader>
@@ -61,6 +57,16 @@ export function StackTable({stacks, className}: StackTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {!stacks.length && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell
+                  colSpan={7}
+                  className="text-muted-foreground text-center py-4 text-base"
+                >
+                  No stacks found
+                </TableCell>
+              </TableRow>
+            )}
             {stacks.map(stack => (
               <ContextMenu key={stack.name}>
                 <ContextMenuTrigger asChild>
