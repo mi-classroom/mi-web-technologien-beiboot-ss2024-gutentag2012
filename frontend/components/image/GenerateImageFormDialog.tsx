@@ -6,7 +6,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {useFormWithComponents} from "@formsignals/form-react";
 import {Carousel, CarouselApi, CarouselContent, CarouselItem} from "@/components/ui/carousel";
-import {useComputed, useSignal, useSignalEffect} from "@preact/signals-react";
+import {batch, useComputed, useSignal, useSignalEffect} from "@preact/signals-react";
 import {createImageFromStack, getFilesInStack} from "@/lib/stack.repo";
 import {getImagePath} from "@/lib/utils";
 import {SliderForm} from "@/components/ui/slider";
@@ -220,6 +220,95 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
                 >
                   <div className="relative">
                     <img
+                      onClick={() => {
+                        const frames = form.json.peek().frames
+
+                        const isIncludedButNotEdge = frames.findIndex((frame, index, arr) => {
+                          const isStartOfPair = index % 2 === 0
+                          const start = isStartOfPair ? frame : arr[index - 1]
+                          const end = isStartOfPair ? arr[index + 1] : frame
+                          if(start === undefined || end === undefined) return false
+                          return start - 1 < i && i + 1 < end
+                        })
+                        let isNotIncludedButNotEdge = frames.findIndex((frame, index, arr) => {
+                          const isStartOfPair = index % 2 === 0
+
+                          // We only want to check from the start of a pair or for the last element
+                          if (isStartOfPair) {
+                            const prevEnd = arr[index - 1]
+                            // In this case it before the first boundary
+                            if (prevEnd === undefined) return i + 2 < frame
+                            return prevEnd < i && i + 2 < frame
+                          }
+                          return false
+                        })
+                        if (isNotIncludedButNotEdge === -1 && frames[frames.length - 1] < i && i + 2 < availableImages.length) {
+                          isNotIncludedButNotEdge = frames.length
+                        }
+
+                        const isIncludedEdge = frames.findIndex((frame) => {
+                          return i + 1 === frame
+                        })
+                        const isNotIncludedEdge = frames.findIndex((frame, index) => {
+                          const isStartOfPair = index % 2 === 0
+                          return isStartOfPair ? i + 2 === frame : i === frame
+                        })
+
+                        // Case 1: The frame is included in the selection, but not at the edge, then we split the pair
+                        if(isIncludedButNotEdge !== -1) {
+                          batch(() => {
+                            form.pushValueToArrayAtIndex(`frames` as never, isIncludedButNotEdge + 1, i)
+                            form.pushValueToArrayAtIndex(`frames` as never, isIncludedButNotEdge + 2, i + 2)
+                          })
+                          return
+                        }
+
+                        // Case 2: The frame is not included in the selection, but not at the edge of one, then we create a new the pair
+                        if (isNotIncludedButNotEdge !== -1) {
+                          batch(() => {
+                            form.pushValueToArrayAtIndex(`frames` as never, isNotIncludedButNotEdge, i + 1)
+                            form.pushValueToArrayAtIndex(`frames` as never, isNotIncludedButNotEdge + 1, i + 1)
+                          })
+                          return
+                        }
+
+                        // Case 3: The frame is included in the selection, but at the edge, then we shrink the pair
+                        if(isIncludedEdge !== -1) {
+                          const isStartOfPair = isIncludedEdge % 2 === 0
+                          const arrayEntry = form.data.peek().frames.peek()[isIncludedEdge].data
+                          const pairEntry = form.data.peek().frames.peek()[isIncludedEdge + (isStartOfPair ? 1 : -1)].data
+
+                          // If the selection is only one frame, we remove the pair
+                          if (arrayEntry.peek() !== pairEntry.peek()) {
+                            arrayEntry.value += isStartOfPair ? 1 : -1
+                            return
+                          }
+
+                          batch(() => {
+                            form.removeValueFromArray(`frames` as never, isIncludedEdge)
+                            form.removeValueFromArray(`frames` as never, isIncludedEdge)
+                          })
+                          return
+                        }
+
+                        // Case 4: The frame is not included in the selection, but at the edge, then we grow the pair
+                        if(isNotIncludedEdge !== -1) {
+                          const isStartOfPair = isNotIncludedEdge % 2 === 0
+                          const arrayEntry = form.data.peek().frames.peek()[isNotIncludedEdge].data
+                          const pairEntry = form.data.peek().frames.peek()[isNotIncludedEdge + (isStartOfPair ? -2 : 1)]?.data
+
+                          // If the selection is only one frame, we remove the pair
+                          if (pairEntry?.peek() - arrayEntry.peek() !== 2) {
+                            arrayEntry.value += isStartOfPair ? -1 : 1
+                            return
+                          }
+
+                          batch(() => {
+                            form.removeValueFromArray(`frames` as never, isNotIncludedEdge)
+                            form.removeValueFromArray(`frames` as never, isNotIncludedEdge)
+                          })
+                        }
+                      }}
                       className={"object-cover mx-auto rounded max-w-96 w-96 border-4" + (indexIncludedInFrames(i) ? " border-primary" : "")}
                       loading="lazy"
                       src={getImagePath(encodeURIComponent(name))}
