@@ -19,7 +19,7 @@ export async function createStack(values: {
 }
 
 export async function getFilesInStack(project: string, stackName: string) {
-  return fetch(`http://localhost:3001/file-upload/list/${project + encodeURIComponent("/") + stackName}`).then(res => res.json()).then(res => res.map((file: { name?: string; lastModified?: string; size: number; prefix?: string; }) => ({
+  return fetch(`http://localhost:3001/file-upload/list/${project + encodeURIComponent("/") + stackName + encodeURIComponent("/")}`).then(res => res.json()).then(res => res.map((file: { name?: string; lastModified?: string; size: number; prefix?: string; }) => ({
     ...file,
     lastModified: file.lastModified && new Date(file.lastModified)
   })))
