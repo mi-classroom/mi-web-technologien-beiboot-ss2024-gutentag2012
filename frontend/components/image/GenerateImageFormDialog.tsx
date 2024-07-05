@@ -200,10 +200,6 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
                 </SelectContent>
               </SelectForm>
             </form.FieldProvider>}
-            {/* TODO Add Preview Slider */}
-            {/*<div className="mx-4 my-2">*/}
-            {/*  <SliderSignal value={sliderFocus} min={0} max={availableImages.length} onValueChange={v => focussedImage.value = v[0]} />*/}
-            {/*</div>*/}
 
             <Carousel
               setApi={setCarouselApi}
