@@ -19,6 +19,7 @@ export type ResultImage = {
   project: string
   stack: string
   frames: number[]
+  lastModified?: number
 }
 
 export async function getAllProjects(): Promise<Array<Project>> {
