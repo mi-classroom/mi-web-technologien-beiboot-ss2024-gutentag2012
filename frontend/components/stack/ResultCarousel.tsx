@@ -46,6 +46,7 @@ export function ResultCarousel({results, className}: ResultCarouselProps) {
                 <ContextMenu>
                   <ContextMenuTrigger>
                     <Link
+                      className="relative"
                       href={getImagePath(result.project, result.stack, "outputs", result.name)}
                       target="_blank"
                     >
@@ -57,6 +58,14 @@ export function ResultCarousel({results, className}: ResultCarouselProps) {
                         src={getImagePath(result.project, result.stack, "outputs", result.name)}
                         alt={result.name}
                       />
+                      <p className="absolute top-0 left-0 rounded-br bg-background text-accent-foreground p-2 text-xs">
+                        Frames: {result.frames.reduce((acc, frame, i, arr) => {
+                        const isStartFrame = i % 2 === 0
+                        if (!isStartFrame) return acc
+                        acc.push(frame + " - " + arr[i + 1])
+                        return acc
+                      }, []).join(", ")}
+                      </p>
                     </Link>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
