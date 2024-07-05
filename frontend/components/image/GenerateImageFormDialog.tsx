@@ -34,6 +34,18 @@ type CreateImageFormDrawerProps = {
   projects: Project[]
 }
 
+const indexIncludedInFrames = (index: number) => {
+  return generateImageForm.data.value.frames.value.some((frame, i) => {
+    const isStartFrame = i % 2 === 0
+    if(isStartFrame) {
+      const endFrame = generateImageForm.data.value.frames.value[i + 1]
+      if(!endFrame) return false
+      return (index + 1) >= frame.data.value && index < endFrame.data.value
+    }
+    return false
+  })
+}
+
 export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) {
   const {project} = useParams()
 
@@ -208,12 +220,13 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
                 >
                   <div className="relative">
                     <img
-                      className="object-cover mx-auto rounded-t max-w-96 w-96"
+                      className={"object-cover mx-auto rounded max-w-96 w-96 border-4" + (indexIncludedInFrames(i) ? " border-primary" : "")}
                       loading="lazy"
                       src={getImagePath(encodeURIComponent(name))}
                       alt={name}
                     />
-                    <p className="absolute top-0 left-0 bg-card text-card-foreground rounded-br p-1 text-xs">{i}</p>
+                    <p className="absolute top-0.5 left-0.5 bg-card text-card-foreground rounded-br p-1 text-xs">{i + 1}</p>
+                    <p className="absolute top-0.5 right-0.5 bg-card text-card-foreground rounded-bl p-1 text-xs">{form.data.value.weights.value[i]?.data} x</p>
                   </div>
                 </CarouselItem>
               ))}
@@ -230,14 +243,14 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
               }}
               validateOnNestedChange
             >
-              <WeightPicker maxWeight={Math.round(availableImages.length / 3)}/>
+              <WeightPicker focussedImage={focussedImage} maxWeight={Math.round(availableImages.length / 3)}/>
               <SliderForm
                 min={1}
                 max={availableImages.length}
                 step={1}
                 onValueChange={onSliderChange}
               >
-                <FrameBlockers max={availableImages.length}/>
+                {availableImages.length && <FrameBlockers max={availableImages.length} min={1}/>}
               </SliderForm>
 
               <Label className="mt-4 mb-2 inline-block">Frames to include</Label>
