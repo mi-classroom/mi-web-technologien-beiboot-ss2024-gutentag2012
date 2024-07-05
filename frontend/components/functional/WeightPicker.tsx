@@ -34,7 +34,7 @@ export const WeightPicker = ({maxWeight, focussedImage}: { focussedImage: Signal
     const timeout = setTimeout(() => {
       const w = document.querySelector("#test")?.getBoundingClientRect()?.width
       setWidth(w);
-    }, 200)
+    }, 300)
     return () => clearTimeout(timeout)
   }, []);
 
@@ -98,7 +98,7 @@ export const WeightPicker = ({maxWeight, focussedImage}: { focussedImage: Signal
       }}
     >
       <g className="text-muted-foreground">
-        {y.ticks(6).map(tick => (
+        {y.ticks(3).map(tick => (
           <g key={tick}>
             <line
               x1={marginLeft + 32}
