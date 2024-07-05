@@ -4,7 +4,7 @@ import {useComputed} from "@preact/signals-react";
 /**
  * @useSignals
  */
-export const FrameBlockers = ({max}: { max: number }) => {
+ export const FrameBlockers = ({max, min}: { max: number, min: number }) => {
   const field = useFieldContext<number[], "">()
 
   const blockerPoints = useComputed(() => {
@@ -12,9 +12,12 @@ export const FrameBlockers = ({max}: { max: number }) => {
 
     return data.reduce((acc, v, i, arr) => {
       if (i === 0 || i >= arr.length - 1 || i % 2 === 0) return acc
+      const percentagePerStep = 100 / (max - min)
+      const percentage = (v - min) * percentagePerStep
+      const nextPercentage = (arr[i + 1] - min) * percentagePerStep
       acc.push([
-        v / max * 100,
-        arr[i + 1] / max * 100
+        percentage,
+        nextPercentage
       ])
       return acc
     }, [] as [number, number][])
