@@ -1,14 +1,6 @@
 "use client"
 
-import {Project} from "@/lib/project.repo";
-import {
-  Drawer, DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from "@/components/ui/drawer";
+import {Project, Stack} from "@/lib/project.repo";
 import {generateImageForm, isGenerateImageDrawerOpen} from "@/components/image/image.signal";
 import {useCallback, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
@@ -16,16 +8,15 @@ import {useFormWithComponents} from "@formsignals/form-react";
 import {Carousel, CarouselApi, CarouselContent, CarouselItem} from "@/components/ui/carousel";
 import {useComputed, useSignal, useSignalEffect} from "@preact/signals-react";
 import {createImageFromStack, getFilesInStack} from "@/lib/stack.repo";
-import Image from "next/image";
 import {getImagePath} from "@/lib/utils";
-import {SliderForm, SliderSignal} from "@/components/ui/slider";
+import {SliderForm} from "@/components/ui/slider";
 import {listenToProgress} from "@/lib/progress.repo";
 import {progressDialogData, updateProgress} from "@/components/functional/ProgressDialog";
 import {FrameBlockers} from "@/components/functional/FrameBlockers";
 import {WeightPicker} from "@/components/functional/WeightPicker";
 import {Label} from "@/components/ui/label";
 import {FrameInputs} from "@/components/functional/FrameInputs";
-import {ErrorText} from "@/components/functional/ErrorText";
+import {ErrorText, ErrorTextForm} from "@/components/functional/ErrorText";
 import {
   DialogClose,
   DialogContent,
@@ -35,14 +26,17 @@ import {
   DialogSignal,
   DialogTitle
 } from "@/components/ui/dialog";
-import {Select, SelectContent, SelectForm, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {SelectContent, SelectForm, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
+import {useParams} from "next/navigation";
 
 type CreateImageFormDrawerProps = {
   projects: Project[]
 }
 
 export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) {
+  const {project} = useParams()
+
   const form = useFormWithComponents(generateImageForm)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
   const [availableImages, setAvailableImages] = useState<Array<{ name: string }>>([])
@@ -79,6 +73,7 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
   useEffect(() => {
     form.updateOptions({
       defaultValues: {
+        project,
         frames: [1, availableImages.length],
         weights: Array.from({length: availableImages.length}, () => 1)
       } as any,
@@ -93,7 +88,6 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
           }
         }
 
-        await createImageFromStack(values);
         return new Promise(r => {
           const identifier = `${values.project}-${values.stack}-${values.frames.join("-")}`
           listenToProgress("generate-image", identifier, data => {
@@ -103,9 +97,22 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
             r(undefined)
           }).then(async () => {
             isGenerateImageDrawerOpen.value = false
+            await createImageFromStack(values);
             await form.reset()
           })
         })
+      },
+      validator: values => {
+        if (!values.project || !values.stack) return undefined
+        const selectedProject = projects.find(p => p.name === values.project)
+        if(!selectedProject) return undefined
+
+        const selectedStack = selectedProject.stacks.find((s)=> s.name === values.stack)
+        if(!selectedStack) return undefined
+
+        if(selectedStack.results.some(result => result.frames.every((f, i) => f === values.frames[i]))) return "This image is already generated"
+
+        return undefined
       }
     })
   }, [availableImages])
@@ -242,6 +249,8 @@ export function GenerateImageFormDialog({projects}: CreateImageFormDrawerProps) 
               </div>
             <ErrorText/>
             </form.FieldProvider>
+
+            <ErrorTextForm />
 
             <DialogFooter className="mt-4">
               <Button
