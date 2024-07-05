@@ -78,9 +78,9 @@ export class FileUploadController {
   async getFile(@Param('filename') filename: string, @Req() req: Request, @Res() res: Response) {
     const range = req.headers?.range
     if(!range) {
-      this.sendWholeFile(filename, res)
+      await this.sendWholeFile(filename, res)
     } else {
-      this.sendPartialFile(filename, range, res)
+      await this.sendPartialFile(filename, range, res)
     }
   }
 

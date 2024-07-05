@@ -36,8 +36,8 @@ export class MinioClientService {
     return this.minio.client.getPartialObject(this.minioBucket, filename, start, end - start + 1)
   }
 
-  public async listFiles(folder: string) {
-    const bucketStream = this.minio.client.listObjectsV2(this.minioBucket, folder === "root" ? undefined : folder, folder !== "root", "/")
+  public async listFiles(folder: string, recursive=false) {
+    const bucketStream = this.minio.client.listObjectsV2(this.minioBucket, folder === "root" ? "" : folder, recursive, "/")
     return new Promise<BucketItem[]>((resolve, reject) => {
       const data: BucketItem[] = []
       bucketStream.on('data', (obj) => {
@@ -92,7 +92,7 @@ export class MinioClientService {
   }
 
   public async deleteFolder(folder: string) {
-    const files = await this.listFiles(folder)
+    const files = await this.listFiles(folder, true)
     await this.minio.client.removeObjects(this.minioBucket, files.map(file => file.name).filter(Boolean) as string[])
   }
 }

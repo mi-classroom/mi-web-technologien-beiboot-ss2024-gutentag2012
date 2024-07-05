@@ -1,12 +1,13 @@
 package main
 
 import (
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func setupAMQPConnection(env Env) *amqp.Connection {
-	conn, err := amqp.Dial(env.AMQPUrl)
+func setupAMQPConnection(url string) *amqp.Connection {
+	conn, err := amqp.Dial(url)
 	if err != nil {
 		log.Fatal(err)
 	}

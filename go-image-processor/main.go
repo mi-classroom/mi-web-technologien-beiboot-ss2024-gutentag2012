@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"strings"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type AmqpMessage struct {
@@ -19,9 +20,9 @@ func main() {
 
 	minio := setupMinioClient(env)
 
-	amqpConnection := setupAMQPConnection(env)
+	amqpConnection := setupAMQPConnection(env.AMQPUrl)
 	amqpChannel := setupAMQPChannel(amqpConnection)
-	videoProcessorQueue := setupAMQPQueue(amqpChannel, env.VideoProcessorQueue)
+	videoProcessorQueue := setupAMQPQueue(amqpChannel, "main")
 
 	defer func(amqpConnection *amqp.Connection) {
 		err := amqpConnection.Close()
@@ -86,6 +87,18 @@ func main() {
 				if err != nil {
 					log.Println("Error while processing message", err)
 				}
+			case "generate-thumbnail":
+				messageData := GenerateThumbnailMessage{}
+				err := json.Unmarshal(message.Data, &messageData)
+				if err != nil {
+					log.Println("Error while parsing message", err)
+					continue
+				}
+
+				err = generateThumbnail(ctx, env, minio, messageData)
+				if err != nil {
+					log.Println("Error while processing message", err)
+				}
 			default:
 				log.Fatal("Unknown pattern")
 			}
@@ -97,7 +110,10 @@ func main() {
 }
 
 func getFrameOutputPathFromLocalPath(localPath string) (string, string) {
+	// The path potentially is inside the cache, we do not want that
+	localPath = strings.Replace(localPath, "/cache", "", 1)
+
 	paths := strings.Split(localPath, ".")
 	folder := "." + paths[1] + "-frames"
-	return folder, folder + "/ffout%5d.png"
+	return folder, folder + "/%5d.png"
 }

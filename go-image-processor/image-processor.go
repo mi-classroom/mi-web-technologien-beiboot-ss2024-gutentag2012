@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -13,7 +14,7 @@ type Changeable interface {
 	Set(x, y int, c color.Color)
 }
 
-func averagePixelValues(filePaths []string, outPath string) error {
+func averagePixelValues(filePaths []string, outPath string, weights []int, totalWeights int) error {
 	numWorkers := 35
 	filePathChannel := make(chan string)
 	resultPixels := make(chan []uint32, numWorkers)
@@ -22,7 +23,7 @@ func averagePixelValues(filePaths []string, outPath string) error {
 	wg.Add(numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
-		go pixelAdditionWorker(filePathChannel, &wg, resultPixels)
+		go pixelAdditionWorker(filePathChannel, &wg, resultPixels, weights)
 	}
 
 	for _, outputFile := range filePaths {
@@ -63,18 +64,16 @@ func averagePixelValues(filePaths []string, outPath string) error {
 			}
 		}
 
-		totalImages := len(filePaths)
 		for pixelIndex := 0; pixelIndex < len(combinedPixels); pixelIndex += 4 {
 			trackIndex := pixelIndex / 4
 			x := trackIndex % width
 			y := trackIndex / width
 
-			r := combinedPixels[pixelIndex] / uint32(totalImages)
-			g := combinedPixels[pixelIndex+1] / uint32(totalImages)
-			b := combinedPixels[pixelIndex+2] / uint32(totalImages)
-			a := combinedPixels[pixelIndex+3] / uint32(totalImages)
+			r := combinedPixels[pixelIndex] / uint32(totalWeights)
+			g := combinedPixels[pixelIndex+1] / uint32(totalWeights)
+			b := combinedPixels[pixelIndex+2] / uint32(totalWeights)
 
-			cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
+			cimg.Set(x, y, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
 		}
 
 		outFile, err := os.Create(outPath)
@@ -102,12 +101,23 @@ func averagePixelValues(filePaths []string, outPath string) error {
 	return nil
 }
 
-func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32) {
+func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resultPixels chan<- []uint32, weights []int) {
 	defer wg.Done()
 
 	var matrix []uint32
 
 	for filePath := range filePathChannel {
+		// The file ends with %5d.png, we need to get the number from the file name as the file index
+		fileIndex := filePath[len(filePath)-9 : len(filePath)-4]
+		// Replace the leading zeros
+		for fileIndex[0] == '0' {
+			fileIndex = fileIndex[1:]
+		}
+		// Now we need to convert the file index to an integer
+		fileIndexNum, err := strconv.Atoi(fileIndex)
+
+		w := weights[fileIndexNum-1]
+
 		file, err := os.Open(filePath)
 		if err != nil {
 			log.Fatal(err)
@@ -131,7 +141,7 @@ func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resu
 		}
 
 		for pixelIndex, pixelValue := range imageWithPixAccess.Pix {
-			matrix[pixelIndex] += uint32(pixelValue)
+			matrix[pixelIndex] += uint32(pixelValue) * uint32(w)
 		}
 
 		file.Close()
