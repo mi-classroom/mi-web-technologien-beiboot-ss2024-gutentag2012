@@ -28,11 +28,11 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen font-sans antialiased",
+          "min-h-screen font-sans antialiased bg-muted/40 text-foreground",
           inter.variable
         )}
       >
-      <header className="bg-background w-full h-16 flex flex-row items-center px-4">
+      <header className="bg-card w-full h-16 flex flex-row items-center px-4">
         <h1 className="font-bold text-2xl">BLIM</h1>
       </header>
       <ThemeProvider

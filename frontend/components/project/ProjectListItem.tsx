@@ -27,7 +27,7 @@ export async function ProjectListItem({project}: ProjectPreviewCardProps) {
     <ContextMenuTrigger>
       <Link
         href={`/${project.name}`}
-        className="bg-card text-card-foreground rounded flex flex-col border hover:border-primary border-muted-foreground"
+        className="bg-card text-card-foreground rounded flex flex-col border hover:border-primary"
       >
         <Image
           className="object-cover mx-auto w-full rounded-t max-h-48 h-48"

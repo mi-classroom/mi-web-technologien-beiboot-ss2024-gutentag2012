@@ -7,8 +7,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import {getAllProjects} from "@/lib/project.repo";
-import {GenerateImageButton} from "@/components/stack/GenerateImageButton";
-import {CreateStackButton} from "@/components/stack/CreateStackButton";
 import {StackTable} from "@/components/stack/StackTable";
 import {ResultCarousel} from "@/components/stack/ResultCarousel";
 import {ProjectsDropdown} from "@/components/project/ProjectsDropdown";
@@ -53,15 +51,9 @@ export default async function Project({params}: { params: { project: string } })
           />}
         </div>
 
-        <h4 className="mt-4 text-lg font-semibold mb-2">All Results</h4>
-        <ResultCarousel results={allResults}/>
+      <ResultCarousel results={allResults} className="mt-4"/>
 
-      <GenerateImageButton/>
-
-        <h4 className="mt-4 text-lg font-semibold mb-2">Stacks</h4>
-      <StackTable stacks={currentProject.stacks}/>
-
-      <CreateStackButton/>
+      <StackTable stacks={currentProject.stacks} className="mt-4"/>
     </main>
   )
 }
