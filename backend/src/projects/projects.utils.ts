@@ -27,9 +27,10 @@ export type ResultImage = {
   project: string
   stack: string
   frames: number[]
+  date?: number
 }
 
-export function getResultImageFromName(name: string) {
+export function getResultImageFromName(name: string, lastModified?: Date) {
   const [projectName, stackName, _outputs, imageName] = name.split("/")
 
   const frames = imageName.split("-").map(part => parseInt(part))
@@ -38,6 +39,7 @@ export function getResultImageFromName(name: string) {
     name: imageName,
     project: projectName,
     stack: stackName,
-    frames
+    frames,
+    lastModified: lastModified?.getTime()
   }
 }

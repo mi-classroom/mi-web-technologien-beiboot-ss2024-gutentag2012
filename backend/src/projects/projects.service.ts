@@ -46,6 +46,6 @@ export class ProjectsService {
 
   private async getStackResultsForStack(projectName: string, stackName: string) {
     const stackEntries = await this.minioClientService.listFiles(projectName + "/" + stackName + "/outputs/", false)
-    return stackEntries.map(e => getResultImageFromName(e.name!))
+    return stackEntries.map(e => getResultImageFromName(e.name!, e.lastModified))
   }
 }
