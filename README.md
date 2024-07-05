@@ -86,6 +86,8 @@ Zum Starten der Anwendung müssen folgende Schritte durchgeführt werden (Für j
 | Total Issue #2                              | 16h         |
 |                                             |             |
 | Weight einfügen                             | 2h          |
-| Total Issue #3                              | 2h          |
+| Auf NextJS wechseln                         | 7h          |
+| Refactoring                                 | 3h          |
+| Total Issue #3                              | 12h         |
 |                                             |             |
 | Total                                       | 34h         |
