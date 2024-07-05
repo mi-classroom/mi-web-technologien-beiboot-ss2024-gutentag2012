@@ -20,7 +20,7 @@ export class FileUploadService {
   }
 
   public async listFiles(folder: string) {
-    return this.minioClientService.listFiles(folder, true)
+    return this.minioClientService.listFiles(folder, false).then(res => res.filter(file => !file.prefix))
   }
 
   public async upload(file: Express.Multer.File, options: { prefix?: string, newName?: string }) {
