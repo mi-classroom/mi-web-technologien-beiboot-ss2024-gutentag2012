@@ -1,4 +1,4 @@
-const url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL)
+const url = new URL(process.env.NEXT_PUBLIC_API_URL)
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
