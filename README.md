@@ -48,14 +48,14 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 
 1. Minio + RabbitMQ
     ```bash
-    docker-compose up -d minio rabbitmq
+    docker-compose up -d
     ```
 2. Kopiere die `.env.example` Datei in `.env` und ändere ggfs. die Werte
- ```bash
- cp backend/.env.example backend/.env
- cp go-image-processor/.env.example go-image-processor/.env
- cp frontend/.env.example frontend/.env
- ```
+    ```bash
+    cp backend/.env.example backend/.env
+    cp go-image-processor/.env.example go-image-processor/.env
+    cp frontend/.env.example frontend/.env
+    ```
 3. Backend
     ```bash
     cd backend
