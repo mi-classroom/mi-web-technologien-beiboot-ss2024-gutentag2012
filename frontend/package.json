@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@formsignals/form-core": "^0.4.0",
     "@formsignals/form-react": "^0.4.0",
     "@formsignals/validation-adapter-zod": "^0.4.0",
     "@preact-signals/safe-react": "^0.6.1",
@@ -51,5 +52,12 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@formsignals/form-core@0.4.0": "patches/@formsignals__form-core@0.4.0.patch",
+      "@formsignals/form-react@0.4.0": "patches/@formsignals__form-react@0.4.0.patch",
+      "@formsignals/validation-adapter-zod@0.4.0": "patches/@formsignals__validation-adapter-zod@0.4.0.patch"
+    }
   }
 }
