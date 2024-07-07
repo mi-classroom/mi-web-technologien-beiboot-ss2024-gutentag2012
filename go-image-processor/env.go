@@ -24,7 +24,7 @@ type Env struct {
 func configureEnvs() Env {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	return Env{
