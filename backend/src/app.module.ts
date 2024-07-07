@@ -1,4 +1,4 @@
-import {Module} from '@nestjs/common';
+import {MiddlewareConsumer, Module, NestModule} from '@nestjs/common';
 import {EnvModule} from './env/env.module';
 import {ConfigModule} from '@nestjs/config';
 import {envSchema} from "./env/env";
@@ -11,6 +11,7 @@ import {ZodValidationPipe} from "nestjs-zod";
 import { ImageResultModule } from './image-result/image-result.module';
 import {EventEmitterModule} from "@nestjs/event-emitter";
 import { ProjectsModule } from './projects/projects.module';
+import {RequestLoggerMiddleware} from "./request-logger.middleware";
 
 @Module({
   imports: [
@@ -36,5 +37,8 @@ import { ProjectsModule } from './projects/projects.module';
     }
   ]
 })
-export class AppModule {
+export class AppModule implements NestModule {
+	configure(consumer: MiddlewareConsumer) {
+		consumer.apply(RequestLoggerMiddleware).forRoutes("*");
+	}
 }
