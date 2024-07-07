@@ -97,6 +97,9 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 | Refactoring                                 | 3h          |
 | Total Issue #3                              | 12h         |
 |                                             |             |
+| Refactoring                                 | 4h          |
+| Total Issue #4                              | 4h          |
+|                                             |             |
 | Total                                       | 34h         |
 
 ## TODO
