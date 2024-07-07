@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { EnvService } from "../env/env.service";
 import { AmqpClientService } from "./amqp-client.service";
+import {EnvModule} from "../env/env.module";
 
 @Module({
 	imports: [
@@ -19,6 +20,7 @@ import { AmqpClientService } from "./amqp-client.service";
 					},
 				}),
 				inject: [EnvService],
+				imports: [EnvModule],
 			},
 		]),
 	],
