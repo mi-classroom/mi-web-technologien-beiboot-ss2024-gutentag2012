@@ -21,7 +21,7 @@ Die Anwendung besteht aus den folgenden Komponenten:
     - Technologie: **Go**
 3. Frontend
     - Anzeige der Projekte
-    - Technologie: **Astro** + **React**
+    - Technologie: **NextJS**
 
 Folgende Services werden zusätzlich verwendet:
 
@@ -44,24 +44,31 @@ Für die lokale Entwicklung werden folgende Tools benötigt:
 - Pnpm
 - Go
 
-Zum Starten der Anwendung müssen folgende Schritte durchgeführt werden (Für jeden Service sollte ein neues Terminal geöffnet werden):
+Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgeführt werden (Für jeden Service sollte ein neues Terminal geöffnet werden):
 
 1. Minio + RabbitMQ
     ```bash
-    docker-compose up -d
+    docker-compose up -d minio rabbitmq
     ```
-2. Backend
+2. Kopiere die `.env.example` Datei in `.env` und ändere ggfs. die Werte
+ ```bash
+ cp backend/.env.example backend/.env
+ cp go-image-processor/.env.example go-image-processor/.env
+ cp frontend/.env.example frontend/.env
+ ```
+3. Backend
     ```bash
     cd backend
     pnpm install
     pnpm dev
     ```
-3. Go Service
+4. Go Service
     ```bash
     cd go-image-processor
-    go run .
+    go mod download
+   air
     ```
-4. Frontend
+5. Frontend
     ```bash
     cd frontend
     pnpm install
@@ -91,3 +98,9 @@ Zum Starten der Anwendung müssen folgende Schritte durchgeführt werden (Für j
 | Total Issue #3                              | 12h         |
 |                                             |             |
 | Total                                       | 34h         |
+
+## TODO
+
+- Update Readmes
+- Add Dockerfiles
+- Add explaination for other developers
