@@ -1,10 +1,10 @@
 # Frontend
 
-|          |                                                   |
-| -------- |---------------------------------------------------|
-| status   | accepted                                          |
-| date     | 2024-04-28                                        |
-| deciders | [Joshua Gawenda](https://github.com/gutentag2012) |
+|          |                                                      |
+| -------- |------------------------------------------------------|
+| status   | superseded by [0007-frontend.md](0007-frontend.md)   |
+| date     | 2024-04-28                                           |
+| deciders | [Joshua Gawenda](https://github.com/gutentag2012)    |
 
 ## Context and Problem Statement
 
