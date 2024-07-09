@@ -20,6 +20,7 @@ export class ImageResultController {
 	@Post()
 	@HttpCode(HttpStatus.OK)
 	async signalChange(@Body() data: ProgressMessageDto) {
+		console.log("Submit to", `image-result.${data.Event}.${data.Identifier}`)
 		this.eventEmitter.emit(
 			`image-result.${data.Event}.${data.Identifier}`,
 			data,
@@ -43,6 +44,8 @@ export class ImageResultController {
 			response.write(`event:progress\ndata:${JSON.stringify(data)}\n\n`);
 			if (data.CurrentStep === data.MaxSteps) response.end();
 		};
+
+		console.log("Listen to", `image-result.${event}.${identifier}`);
 
 		this.eventEmitter.on(`image-result.${event}.${identifier}`, onEvent);
 		response.on("close", () =>

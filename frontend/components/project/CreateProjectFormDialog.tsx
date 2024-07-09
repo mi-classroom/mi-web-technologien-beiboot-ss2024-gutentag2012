@@ -40,8 +40,11 @@ import {
 } from "@formsignals/form-react";
 import { useComputed } from "@preact/signals-react";
 import { useRouter } from "next/navigation";
+import {useEffect} from "react";
+import {progressDialogData, updateProgress} from "@/components/functional/ProgressDialog";
+import {listenToProgress} from "@/lib/repos/progress.repo";
+import {createImageFromStack} from "@/lib/repos/stack.repo";
 
-// TODO Add loading screen here
 export function CreateProjectFormDialog() {
 	const router = useRouter();
 	const form = useFormWithComponents(createProjectForm);
@@ -53,6 +56,44 @@ export function CreateProjectFormDialog() {
 			fileUpload.isUploading.value ||
 			fileUpload.isFileUploaded.value,
 	);
+
+	useEffect(() => {
+		form.updateOptions({
+			defaultValues: {
+				projectFile: null as File | null,
+				prefix: "",
+			},
+			onSubmit: async values => {
+				progressDialogData.value = {
+					CurrentStep: 0,
+					MaxSteps: 0,
+					Message: "Waiting for server...",
+					options: {
+						label: "Project Creation",
+						description:
+							"Currently processing video file and creating project.",
+					},
+				};
+
+				return new Promise((r) => {
+					listenToProgress("generate-thumbnail", values.prefix, (data) => {
+						updateProgress(data);
+						if (data.CurrentStep !== data.MaxSteps) return;
+						serverRevalidateTag("projects");
+						r(undefined);
+					}).then(async () => {
+						await fileUpload.uploadFile([
+							["prefix", values.prefix],
+							["newName", "input"],
+						]);
+
+						isCreateProjectDrawerOpen.value = false;
+						await form.reset();
+					});
+				})
+			}
+		})
+	}, [form, isCreateProjectDrawerOpen, fileUpload.uploadFile]);
 
 	return (
 		<DialogSignal
@@ -66,18 +107,7 @@ export function CreateProjectFormDialog() {
 				<form
 					onSubmit={async (e) => {
 						e.preventDefault();
-						const values = createProjectForm.json.peek();
-						isCreateProjectDrawerOpen.value = false;
-
-						await fileUpload.uploadFile([
-							["prefix", values.prefix],
-							["newName", "input"],
-						]);
-
-						await serverRevalidateTag("projects");
-						await form.reset();
-
-						router.push(values.prefix);
+						void form.handleSubmit()
 					}}
 				>
 					<DialogHeader>

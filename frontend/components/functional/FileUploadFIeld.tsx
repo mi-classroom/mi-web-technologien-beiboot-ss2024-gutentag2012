@@ -39,7 +39,7 @@ export function FileUploadField({
 					file.value = selectedFile;
 				}}
 			/>
-			{shouldPreview && file.value ? (
+			{shouldPreview && file?.value ? (
 				<>
 					{/* biome-ignore lint/a11y/useMediaCaption: <explanation> */}
 					<video
