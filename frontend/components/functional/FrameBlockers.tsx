@@ -11,7 +11,7 @@ export const FrameBlockers = ({ max, min }: { max: number; min: number }) => {
 	const field = useFieldContext<number[], "">();
 
 	const blockerPoints = useComputed(() => {
-		const data = unSignalifyValueSubscribed(field.data);
+		const data = field.data ? unSignalifyValueSubscribed(field.data) : [];
 
 		return data.reduce(
 			(acc, v, i, arr) => {

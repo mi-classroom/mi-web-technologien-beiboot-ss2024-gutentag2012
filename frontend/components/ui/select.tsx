@@ -23,7 +23,7 @@ const SelectForm = (props: SelectSignalProps) => {
 	const field = useFieldContext<string, "">();
 	return (
 		<Select
-			value={field.data.value}
+			value={field.data?.value}
 			onValueChange={field.handleChange}
 			{...props}
 		/>

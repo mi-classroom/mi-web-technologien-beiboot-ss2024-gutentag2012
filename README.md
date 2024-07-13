@@ -65,10 +65,9 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 4. Go Service
     ```bash
     cd go-image-processor
-    go mod download
-   air
+    go run .
     ```
-5. Frontend
+5. Frontend (Sollte beim Install step der Fehler ENAMETOOLONG auftreten, dann kurz auf pnpm@7.33.5 downgraden für den install, danach kann wieder ein upgrade ausgeführt werden)
     ```bash
     cd frontend
     pnpm install

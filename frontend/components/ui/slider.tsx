@@ -67,7 +67,7 @@ const SliderForm = ({
 	const field = useFieldContext<number[], "">();
 	return (
 		<Slider
-			value={unSignalifyValueSubscribed(field.data)}
+			value={field.data ? unSignalifyValueSubscribed(field.data) : []}
 			onValueChange={onValueChange}
 			handles={field.data.value.length}
 			{...props}
