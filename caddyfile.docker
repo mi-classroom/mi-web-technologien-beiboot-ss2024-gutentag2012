@@ -1,0 +1,17 @@
+{
+    https_port 443
+    local_certs
+}
+
+http://localhost {
+    redir https://{host}{uri}  # Redirect HTTP to HTTPS
+}
+
+https://localhost {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+
+    handle_path /api/* {
+        reverse_proxy host.docker.internal:3001
+    }
+    reverse_proxy host.docker.internal:3000
+}

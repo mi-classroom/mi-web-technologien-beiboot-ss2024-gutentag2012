@@ -31,17 +31,78 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    networks:
-      - rabbitmq_net
     volumes:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
     restart: always
 
+  go-image-processor:
+    container_name: 'go-image-processor'
+    build:
+      context: ./go-image-processor
+      dockerfile: Dockerfile
+    depends_on:
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+    environment:
+      - FFMPEG_BINARY_PATH=ffmpeg
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_BUCKET_NAME=inputvideos
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
+      - API_URL=http://host.docker.internal:3001
+
+  backend:
+    container_name: 'backend'
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - '3001:3001'
+    restart: always
+    environment:
+      - PORT=3001
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_BUCKET_NAME=inputvideos
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+
+  frontend:
+    container_name: 'frontend'
+    depends_on:
+      - backend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://localhost/api
+        - SERVER_API_URL=http://backend:3001
+    ports:
+      - '3000:3000'
+    restart: always
+
+  reverse-proxy:
+    image: caddy:latest  # or 'nginx:latest' if you prefer nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddyfile.docker:/etc/caddy/Caddyfile  # For Caddy configuration
+      - ./certs:/etc/caddy/certs  # Mount certificates
+
 networks:
-  minio_net:
-    driver: bridge
-  rabbitmq_net:
+  default:
     driver: bridge
 
 volumes:
