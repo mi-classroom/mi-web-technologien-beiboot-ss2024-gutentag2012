@@ -34,6 +34,14 @@ Folgende Services werden zusätzlich verwendet:
 
 ![Architektur](./docs/architecture.svg)
 
+## Starten der Anwendung
+
+Um die Anwendung im Production Modus zu starten, kann sie mit Docker Compose gestartet werden:
+
+```bash
+docker-compose up -d
+```
+
 ## Lokale Entwicklung
 
 Für die lokale Entwicklung werden folgende Tools benötigt:
@@ -48,7 +56,7 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 
 1. Minio + RabbitMQ
     ```bash
-    docker-compose up -d
+    docker-compose up -d minio rabbitmq
     ```
 2. Kopiere die `.env.example` Datei in `.env` und ändere ggfs. die Werte
     ```bash
@@ -65,7 +73,8 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 4. Go Service
     ```bash
     cd go-image-processor
-    go run .
+    go mod download
+    air
     ```
 5. Frontend (Sollte beim Install step der Fehler ENAMETOOLONG auftreten, dann kurz auf pnpm@7.33.5 downgraden für den install, danach kann wieder ein upgrade ausgeführt werden)
     ```bash
