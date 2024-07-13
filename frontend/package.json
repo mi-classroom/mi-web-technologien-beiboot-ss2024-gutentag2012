@@ -56,7 +56,8 @@
 		"patchedDependencies": {
 			"@formsignals/form-core@0.4.0": "patches/@formsignals__form-core@0.4.0.patch",
 			"@formsignals/form-react@0.4.0": "patches/@formsignals__form-react@0.4.0.patch",
-			"@formsignals/validation-adapter-zod@0.4.0": "patches/@formsignals__validation-adapter-zod@0.4.0.patch"
+			"@formsignals/validation-adapter-zod@0.4.0": "patches/@formsignals__validation-adapter-zod@0.4.0.patch",
+			"next@14.2.4": "patches/next@14.2.4.patch"
 		}
 	}
 }

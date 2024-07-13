@@ -99,7 +99,8 @@ export const WeightPicker = ({
 			isDraggingSignal.value = false;
 		});
 
-		d3Selection.call(dragListener);
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		d3Selection.call(dragListener as any);
 	}
 
 	return (

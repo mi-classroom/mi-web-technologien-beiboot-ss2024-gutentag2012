@@ -93,7 +93,7 @@ export function CreateProjectFormDialog() {
 				})
 			}
 		})
-	}, [form, isCreateProjectDrawerOpen, fileUpload.uploadFile]);
+	}, [form, fileUpload.uploadFile]);
 
 	return (
 		<DialogSignal

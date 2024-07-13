@@ -9,7 +9,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getApiBaseUrl } from "@/lib/env";
+import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
 import { getAllProjects } from "@/lib/repos/project.repo";
 import { getProjectFile } from "@/lib/utils";
 import Link from "next/link";
@@ -53,7 +53,7 @@ export default async function Project({
 					<video
 						id="project-video"
 						className="h-[500px]"
-						src={`${getApiBaseUrl()}/file-upload/get/${encodeURIComponent(videoFile)}`}
+						src={`/media/file-upload/get/${encodeURIComponent(videoFile)}`}
 						controls
 						preload="auto"
 					/>

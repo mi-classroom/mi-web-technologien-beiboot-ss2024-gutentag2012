@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/env";
+import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
 
 export async function createStack(values: {
 	scale: number;
@@ -7,7 +7,7 @@ export async function createStack(values: {
 	frameRate: number;
 	filename?: string;
 }): Promise<void> {
-	return fetch(`${getApiBaseUrl()}/video-processor/stack`, {
+	return fetch(`${getServerApiUrl()}/video-processor/stack`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -24,7 +24,7 @@ export async function createStack(values: {
 
 export async function getFilesInStack(project: string, stackName: string) {
 	return fetch(
-		`${getApiBaseUrl()}/file-upload/list/${project + encodeURIComponent("/") + stackName + encodeURIComponent("/")}`,
+		`${getServerApiUrl()}/file-upload/list/${project + encodeURIComponent("/") + stackName + encodeURIComponent("/")}`,
 	)
 		.then((res) => res.json())
 		.then((res) =>
@@ -48,7 +48,7 @@ export async function createImageFromStack(values: {
 	frames: number[];
 	weights: number[];
 }) {
-	return fetch(`${getApiBaseUrl()}/video-processor/generate`, {
+	return fetch(`${getServerApiUrl()}/video-processor/generate`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",

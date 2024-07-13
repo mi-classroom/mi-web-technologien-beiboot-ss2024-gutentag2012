@@ -63,7 +63,7 @@ export function updateProgress(progress: Omit<ProgressFrame, "options">) {
 
 	const isFinished = progress?.CurrentStep === progress?.MaxSteps;
 	const currentValue = isFinished
-		? progressDialogDataHistory.peek().reduce((acc, [_, time]) => acc + time, 0)
+		? progressDialogDataHistory.peek().reduce((acc, [_, time]) => acc + (time ?? 0), 0)
 		: null;
 
 	progressDialogDataHistory.value = [

@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/env";
+import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
 import type { FileUploadState } from "@/lib/hooks/useFileUpload";
 import { parseXhrResponse } from "@/lib/utils";
 import type { Signal } from "@preact/signals-react";
@@ -58,7 +58,7 @@ export async function uploadVideoFile(
 			reject(xhr.responseText);
 		});
 
-		xhr.open("POST", `${getApiBaseUrl()}/file-upload`, true);
+		xhr.open("POST", `${getServerApiUrl()}/file-upload`, true);
 		xhr.send(formData);
 		status.value = {
 			state: "progress",
@@ -69,7 +69,7 @@ export async function uploadVideoFile(
 
 export async function deleteFolder(...paths: string[]) {
 	return fetch(
-		`${getApiBaseUrl()}/file-upload/delete/${paths.join(encodeURIComponent("/"))}`,
+		`${getServerApiUrl()}/file-upload/delete/${paths.join(encodeURIComponent("/"))}`,
 		{ method: "DELETE" },
 	);
 }

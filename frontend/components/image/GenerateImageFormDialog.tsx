@@ -51,6 +51,7 @@ import {
 } from "@preact/signals-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {LazyImage} from "@/components/functional/LazyImage";
 
 type CreateImageFormDrawerProps = {
 	projects: Project[];
@@ -83,14 +84,14 @@ export function GenerateImageFormDialog({
 	useSignalEffect(() => {
 		const currentFocus = focussedImage.value;
 		if (!carouselApi) return;
-		carouselApi.scrollTo(currentFocus - 2);
+		carouselApi.scrollTo(currentFocus - 3);
 	});
 
 	useEffect(() => {
 		if (!carouselApi) return;
 
 		carouselApi.on("select", () => {
-			focussedImage.value = carouselApi.selectedScrollSnap() + 2;
+			focussedImage.value = carouselApi.selectedScrollSnap() + 3;
 		});
 	}, [carouselApi, focussedImage]);
 
@@ -181,7 +182,10 @@ export function GenerateImageFormDialog({
 				open={isGenerateImageDrawerOpen}
 				onOpenChange={(newOpen) => {
 					isGenerateImageDrawerOpen.value = newOpen;
-					if (!newOpen) generateImageForm.reset();
+					if (!newOpen) {
+						setAvailableImages([]);
+						generateImageForm.reset();
+					}
 				}}
 			>
 				<DialogContent className="max-w-[80vw]">
@@ -243,10 +247,11 @@ export function GenerateImageFormDialog({
 							>
 								<CarouselContent>
 									{availableImages.map(({ name }, i) => (
-										<CarouselItem key={name} className="basis-1/1 relative">
+										<CarouselItem key={name} className="relative basis-1/1 w-1/5">
 											<div className="relative">
 												{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-												<img
+												<LazyImage
+													id={name}
 													onClick={() => {
 														const frames = form.json.peek().frames;
 
@@ -390,7 +395,7 @@ export function GenerateImageFormDialog({
 															});
 														}
 													}}
-													className={`object-cover mx-auto rounded max-w-96 w-96 border-4${indexIncludedInFrames(i) ? " border-primary" : ""}`}
+													className={`object-cover mx-auto rounded border-4${indexIncludedInFrames(i) ? " border-primary" : ""}`}
 													loading="lazy"
 													src={getImagePath(encodeURIComponent(name))}
 													alt={name}
@@ -438,7 +443,7 @@ export function GenerateImageFormDialog({
 								<Label className="mt-4 mb-2 inline-block">
 									Frames to include
 								</Label>
-								<div className="flex flex-col gap-2">
+								<div className="flex flex-col gap-2 max-h-48 overflow-y-auto p-1">
 									{carouselApi && (
 										<FrameInputs
 											focussedImage={focussedImage}

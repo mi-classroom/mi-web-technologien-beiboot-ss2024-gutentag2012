@@ -14,6 +14,9 @@ patchedDependencies:
   '@formsignals/validation-adapter-zod@0.4.0':
     hash: ss2imlnxz2p53ks7nmb7oa2hiy
     path: patches/@formsignals__validation-adapter-zod@0.4.0.patch
+  next@14.2.4:
+    hash: 73yzzytfxjtetyqewwr24qwuou
+    path: patches/next@14.2.4.patch
 
 importers:
 
@@ -93,7 +96,7 @@ importers:
         version: 0.397.0(react@18.3.1)
       next:
         specifier: 14.2.4
-        version: 14.2.4(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.4(patch_hash=73yzzytfxjtetyqewwr24qwuou)(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3593,7 +3596,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  next@14.2.4(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@14.2.4(patch_hash=73yzzytfxjtetyqewwr24qwuou)(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@next/env': 14.2.4
       '@swc/helpers': 0.5.5

@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/env";
+import { getServerApiUrl } from "@/lib/env";
 
 export type Project = {
 	name: string;
@@ -25,7 +25,7 @@ export type ResultImage = {
 };
 
 export async function getAllProjects(): Promise<Array<Project>> {
-	return fetch(`${getApiBaseUrl()}/projects`, { next: { tags: ["projects"] } })
+	return fetch(`${getServerApiUrl()}/projects`, { next: { tags: ["projects"] } })
 		.then((res) => res.json())
 		.catch((e) => {
 			console.error(e);

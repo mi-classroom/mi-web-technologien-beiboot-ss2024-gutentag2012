@@ -42,7 +42,7 @@ type ResultCarouselProps = {
 
 export function ResultCarousel({ results, className }: ResultCarouselProps) {
 	const sortedResults = results.toSorted(
-		(a, b) => b.lastModified - a.lastModified,
+		(a, b) => (b.lastModified ?? 0) - (a.lastModified ?? 0),
 	);
 	return (
 		<Card className={className}>

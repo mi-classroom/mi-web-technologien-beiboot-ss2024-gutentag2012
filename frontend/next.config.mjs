@@ -1,4 +1,5 @@
 const url = new URL(process.env.NEXT_PUBLIC_API_URL);
+const urlServer = new URL(process.env.SERVER_API_URL);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -8,9 +9,23 @@ const nextConfig = {
 				port: url.port,
 				hostname: url.hostname,
 				protocol: url.protocol.replace(":", ""),
-				pathname: "/file-upload/get/**",
+				pathname: `${url.pathname}/file-upload/get/**`,
+			},
+			{
+				port: urlServer.port,
+				hostname: urlServer.hostname,
+				protocol: urlServer.protocol.replace(":", ""),
+				pathname: `${urlServer.pathname}/file-upload/get/**`,
 			},
 		],
+	},
+	async rewrites() {
+		return [
+			{
+				source: "/media/:path*",
+				destination: `${urlServer.href}/:path*`,
+			},
+		];
 	},
 	experimental: {
 		swcPlugins: [

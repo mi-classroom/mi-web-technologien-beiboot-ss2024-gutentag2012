@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/env";
+import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
 
 type ProgressData = {
 	Event: string;
@@ -14,7 +14,7 @@ export function listenToProgress(
 	onProgress: (data: ProgressData) => void,
 ) {
 	const eventSource = new EventSource(
-		`${getApiBaseUrl()}/image-result/${event}/${identifier}`,
+		`${getServerApiUrl()}/image-result/${event}/${identifier}`,
 	);
 	eventSource.addEventListener("progress", (e) =>
 		onProgress(JSON.parse(e.data)),

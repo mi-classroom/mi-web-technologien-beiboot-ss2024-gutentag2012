@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/env";
+import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
 import type { Project } from "@/lib/repos/project.repo";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -15,7 +15,7 @@ export function getImagePath(...parts: string[]) {
 		.map((e) => e?.replace(/\/$/, "").replaceAll("/", SLASH))
 		.join(SLASH);
 
-	return `${getApiBaseUrl()}/file-upload/get/${combined}`;
+	return `/media/file-upload/get/${combined}`;
 }
 
 export function getProjectFile(project: Project) {
