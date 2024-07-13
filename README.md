@@ -42,6 +42,8 @@ Um die Anwendung im Production Modus zu starten, kann sie mit Docker Compose ges
 docker-compose up -d
 ```
 
+Jetzt kann über `https://localhost` das Frontend aufgerufen werden.
+
 ## Lokale Entwicklung
 
 Für die lokale Entwicklung werden folgende Tools benötigt:
@@ -54,9 +56,9 @@ Für die lokale Entwicklung werden folgende Tools benötigt:
 
 Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgeführt werden (Für jeden Service sollte ein neues Terminal geöffnet werden):
 
-1. Minio + RabbitMQ
+1. Minio + RabbitMQ + Reverse Proxy
     ```bash
-    docker-compose up -d minio rabbitmq
+    docker-compose up -d minio rabbitmq reverse-proxy
     ```
 2. Kopiere die `.env.example` Datei in `.env` und ändere ggfs. die Werte
     ```bash
