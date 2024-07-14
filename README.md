@@ -108,12 +108,7 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 | Total Issue #3                              | 12h         |
 |                                             |             |
 | Refactoring                                 | 4h          |
-| Total Issue #4                              | 4h          |
+| Dockerize                                   | 3h          |
+| Total Issue #4                              | 7h          |
 |                                             |             |
-| Total                                       | 34h         |
-
-## TODO
-
-- Update Readmes
-- Add Dockerfiles
-- Add explaination for other developers
+| Total                                       | 37h         |

@@ -94,13 +94,13 @@ services:
 
   reverse-proxy:
     container_name: 'reverse-proxy'
-    image: caddy:latest  # or 'nginx:latest' if you prefer nginx
+    image: caddy:latest
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./caddyfile.docker:/etc/caddy/Caddyfile  # For Caddy configuration
-      - ./certs:/etc/caddy/certs  # Mount certificates
+      - ./caddyfile.docker:/etc/caddy/Caddyfile
+      - ./certs:/etc/caddy/certs
 
 networks:
   default:
