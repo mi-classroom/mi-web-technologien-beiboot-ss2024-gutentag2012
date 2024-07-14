@@ -1,0 +1,14 @@
+diff --git a/dist/server/lib/router-utils/proxy-request.js b/dist/server/lib/router-utils/proxy-request.js
+index 3bf27e05e7b8ca4248f4f2448215f58e92df2861..65934906c1504d5c7e1af59c4683345cc7ada4a1 100644
+--- a/dist/server/lib/router-utils/proxy-request.js
++++ b/dist/server/lib/router-utils/proxy-request.js
+@@ -31,7 +31,8 @@ async function proxyRequest(req, res, parsedUrl, upgradeHead, reqBody, proxyTime
+         proxyTimeout: proxyTimeout === null ? undefined : proxyTimeout || 30000,
+         headers: {
+             "x-forwarded-host": req.headers.host || ""
+-        }
++        },
++        secure: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+     });
+     await new Promise((proxyResolve, proxyReject)=>{
+         let finished = false;

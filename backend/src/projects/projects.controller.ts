@@ -1,11 +1,11 @@
-import {Controller, Get} from '@nestjs/common';
-import {ProjectsService} from "./projects.service";
+import { Controller, Get } from "@nestjs/common";
+import { ProjectsService } from "./projects.service";
 
-@Controller('projects')
+@Controller("projects")
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
-  @Get("/")
-  getAllProjects() {
-    return this.projectsService.getAllProjects()
-  }
+	constructor(private readonly projectsService: ProjectsService) {}
+	@Get("/")
+	getAllProjects() {
+		return this.projectsService.getAllProjects();
+	}
 }

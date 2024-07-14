@@ -224,6 +224,8 @@ type GenerateThumbnailMessage struct {
 	File    string `json:"file"`
 }
 
+const MaxStepsThumbnail = 3
+
 func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, data GenerateThumbnailMessage) error {
 	log.Println("Generating thumbnail for project:", data.Project)
 
@@ -233,10 +235,33 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 		return err
 	}
 
+	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
+		Identifier:  data.Project,
+		Event:       "generate-thumbnail",
+		MaxSteps:    MaxStepsThumbnail,
+		CurrentStep: 0,
+		Message:     "Downloading video file...",
+	})
+	if err != nil {
+		log.Println("Could not message API")
+	}
+
 	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Project+"/"+data.File, "generate-thumbnail")
 	if err != nil {
 		log.Println("Error while downloading file from Minio:", err)
 		return err
+	}
+	log.Println("Done downloading file from Minio.")
+
+	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
+		Identifier:  data.Project,
+		Event:       "generate-thumbnail",
+		MaxSteps:    MaxStepsThumbnail,
+		CurrentStep: 1,
+		Message:     "Extracting thumbnail from video...",
+	})
+	if err != nil {
+		log.Println("Could not message API")
 	}
 
 	err = splitThumbnailFromVideo(env.FfmpegPath, localPath, "./tmp/generate-thumbnail/"+data.Project+"/thumbnail.png")
@@ -244,12 +269,36 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 		log.Println("Error while generating thumbnail:", err)
 		return err
 	}
+	log.Println("Done generating thumbnail.")
+
+	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
+		Identifier:  data.Project,
+		Event:       "generate-thumbnail",
+		MaxSteps:    MaxStepsThumbnail,
+		CurrentStep: 2,
+		Message:     "Uploading thumbnail...",
+	})
+	if err != nil {
+		log.Println("Could not message API")
+	}
 
 	minioOutputFolder := data.Project + "/thumbnail.png"
 	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, "./tmp/generate-thumbnail/"+data.Project+"/thumbnail.png")
 	if err != nil {
 		log.Println("Error while uploading thumbnail to Minio:", err)
 		return err
+	}
+	log.Println("Done uploading thumbnail to Minio.")
+
+	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
+		Identifier:  data.Project,
+		Event:       "generate-thumbnail",
+		MaxSteps:    MaxStepsThumbnail,
+		CurrentStep: 3,
+		Message:     "Finished process.",
+	})
+	if err != nil {
+		log.Println("Could not message API")
 	}
 
 	err = os.RemoveAll("./tmp/generate-thumbnail/" + data.Project)

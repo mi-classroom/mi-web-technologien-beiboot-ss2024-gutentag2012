@@ -1,12 +1,15 @@
-import {effect, signal} from "@preact/signals-react";
-import {FormLogic} from "@formsignals/form-react";
+import { FormLogic } from "@formsignals/form-react";
+import { effect, signal } from "@preact/signals-react";
 
-export const isCreateProjectDrawerOpen = signal(false)
+export const isCreateProjectDrawerOpen = signal(false);
 
-export const createProjectForm = new FormLogic<{projectFile: File | null, prefix: string}>({
-  defaultValues: {
-    projectFile: null as File | null,
-    prefix: "",
-  },
-})
-createProjectForm.mount()
+export const createProjectForm = new FormLogic<{
+	projectFile: File | null;
+	prefix: string;
+}>({
+	defaultValues: {
+		projectFile: null as File | null,
+		prefix: "",
+	},
+});
+createProjectForm.mount();
