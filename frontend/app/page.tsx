@@ -4,8 +4,10 @@ import {
 	BreadcrumbList,
 	BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import {getAllProjects} from "@/lib/repos/project.repo";
 
-export default function Project() {
+export default async function Project() {
+	const projects = await getAllProjects();
 	return (
 		<main className="container py-2">
 			<Breadcrumb className="mb-4">
@@ -14,7 +16,7 @@ export default function Project() {
 				</BreadcrumbList>
 			</Breadcrumb>
 
-			<ProjectList />
+			<ProjectList projects={projects} />
 		</main>
 	);
 }
