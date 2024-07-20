@@ -19,6 +19,7 @@ func main() {
 	ctx := context.Background()
 
 	minio := setupMinioClient(env)
+	clearLeastRecentlyUsedCache(env)
 
 	amqpConnection := setupAMQPConnection(env.AMQPUrl)
 	amqpChannel := setupAMQPChannel(amqpConnection)
@@ -102,6 +103,8 @@ func main() {
 			default:
 				log.Fatal("Unknown pattern")
 			}
+
+			clearLeastRecentlyUsedCache(env)
 		}
 	}()
 

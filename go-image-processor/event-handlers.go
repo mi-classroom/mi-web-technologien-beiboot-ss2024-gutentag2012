@@ -73,7 +73,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 		Event:       "create-stack",
 		MaxSteps:    MaxStepsStack,
 		CurrentStep: 2,
-		Message:     "Uploding frames to server...",
+		Message:     "Uploading frames to server...",
 	})
 	if err != nil {
 		log.Println("Could not message API")
