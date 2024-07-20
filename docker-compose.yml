@@ -55,6 +55,7 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
       - API_URL=http://host.docker.internal:3001
+      - CACHE_SIZE_GB=10
 
   backend:
     container_name: 'backend'

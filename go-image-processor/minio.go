@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/minio/minio-go/v7"
@@ -25,37 +23,15 @@ func setupMinioClient(env Env) *minio.Client {
 }
 
 func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectName string, prefix string) (string, error) {
-	filePath := "./tmp/" + prefix + "/" + objectName
-	cachePath := strings.Replace(filePath, "/tmp/", "/tmp/cache/", 1)
-
-	_, err := os.Stat(cachePath)
-	// There is a cached local file
-	if err == nil {
-		return cachePath, nil
+	filePath := getCachedPath("./tmp/" + prefix + "/" + objectName)
+	if isCached(filePath) {
+		return filePath, nil
 	}
 
-	err = minioClient.FGetObject(ctx, bucketName, objectName, filePath, minio.GetObjectOptions{})
+	err := minioClient.FGetObject(ctx, bucketName, objectName, filePath, minio.GetObjectOptions{})
 	if err != nil {
 		return "", err
 	}
-
-	// Copy the file to cache, if it fails it does not matter
-	go func() {
-		file, err := os.ReadFile(filePath)
-		if err != nil {
-			return
-		}
-		cacheDir := filepath.Dir(cachePath)
-		err = os.MkdirAll(cacheDir, os.ModePerm)
-		if err != nil {
-			return
-		}
-
-		err = os.WriteFile(cachePath, file, os.ModePerm)
-		if err != nil {
-			return
-		}
-	}()
 
 	return filePath, nil
 }

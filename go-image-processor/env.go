@@ -4,6 +4,7 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strconv"
 )
 
 type Env struct {
@@ -19,12 +20,19 @@ type Env struct {
 	VideoProcessorQueue string
 
 	APIUrl string
+
+	CacheSizeGB int64
 }
 
 func configureEnvs() Env {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println(err)
+	}
+
+	cacheSize, err := strconv.ParseInt(os.Getenv("CACHE_SIZE_GB"), 10, 64)
+	if err != nil {
+		cacheSize = 1
 	}
 
 	return Env{
@@ -36,5 +44,6 @@ func configureEnvs() Env {
 		os.Getenv("AMQP_URL"),
 		os.Getenv("VIDEO_PROCESSOR_QUEUE"),
 		os.Getenv("API_URL"),
+		cacheSize,
 	}
 }

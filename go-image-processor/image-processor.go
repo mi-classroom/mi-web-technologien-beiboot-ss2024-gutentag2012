@@ -107,6 +107,9 @@ func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resu
 	var matrix []uint32
 
 	for filePath := range filePathChannel {
+		if len(filePath) == 0 {
+			continue
+		}
 		// The file ends with %5d.png, we need to get the number from the file name as the file index
 		fileIndex := filePath[len(filePath)-9 : len(filePath)-4]
 		// Replace the leading zeros
