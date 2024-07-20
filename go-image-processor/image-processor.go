@@ -3,16 +3,13 @@ package main
 import (
 	"image"
 	"image/color"
-	"image/png"
+	"image/draw"
+	"image/jpeg"
 	"log"
 	"os"
 	"strconv"
 	"sync"
 )
-
-type Changeable interface {
-	Set(x, y int, c color.Color)
-}
 
 func averagePixelValues(filePaths []string, outPath string, weights []int, totalWeights int) error {
 	numWorkers := 35
@@ -44,58 +41,55 @@ func averagePixelValues(filePaths []string, outPath string, weights []int, total
 		}
 	}(firstImageFile)
 
-	finalImage, err := png.Decode(firstImageFile)
+	firstImage, err := jpeg.Decode(firstImageFile)
 	if err != nil {
 		log.Println("Error while decoding first image file:", err)
 		return err
 	}
+	bounds := firstImage.Bounds()
+	width, height := bounds.Dx(), bounds.Dy()
+
+	finalImage := image.NewRGBA(bounds)
 
 	// Wait for all workers to finish
 	wg.Wait()
 	close(resultPixels)
 
-	if cimg, ok := finalImage.(Changeable); ok {
-		bounds := finalImage.Bounds()
-		width, height := bounds.Dx(), bounds.Dy()
-		combinedPixels := make([]uint32, 4*width*height)
-		for pixelArray := range resultPixels {
-			for pixelIndex, pixelValue := range pixelArray {
-				combinedPixels[pixelIndex] += pixelValue
-			}
+	combinedPixels := make([]uint32, 4*width*height)
+	for pixelArray := range resultPixels {
+		for pixelIndex, pixelValue := range pixelArray {
+			combinedPixels[pixelIndex] += pixelValue
 		}
+	}
 
-		for pixelIndex := 0; pixelIndex < len(combinedPixels); pixelIndex += 4 {
-			trackIndex := pixelIndex / 4
-			x := trackIndex % width
-			y := trackIndex / width
+	for pixelIndex := 0; pixelIndex < len(combinedPixels); pixelIndex += 4 {
+		trackIndex := pixelIndex / 4
+		x := trackIndex % width
+		y := trackIndex / width
 
-			r := combinedPixels[pixelIndex] / uint32(totalWeights)
-			g := combinedPixels[pixelIndex+1] / uint32(totalWeights)
-			b := combinedPixels[pixelIndex+2] / uint32(totalWeights)
+		r := combinedPixels[pixelIndex] / uint32(totalWeights)
+		g := combinedPixels[pixelIndex+1] / uint32(totalWeights)
+		b := combinedPixels[pixelIndex+2] / uint32(totalWeights)
 
-			cimg.Set(x, y, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
-		}
+		finalImage.Set(x, y, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
+	}
 
-		outFile, err := os.Create(outPath)
-		defer func(outFile *os.File) {
-			err := outFile.Close()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}(outFile)
-
+	outFile, err := os.Create(outPath)
+	defer func(outFile *os.File) {
+		err := outFile.Close()
 		if err != nil {
-			log.Println("Error while creating output file:", err)
-			return err
+			log.Fatal(err)
 		}
+	}(outFile)
 
-		err = png.Encode(outFile, finalImage)
-		if err != nil {
-			log.Println("Error while encoding output file:", err)
-			return err
-		}
-	} else {
-		log.Println("Was unable to access pix of image")
+	if err != nil {
+		log.Println("Error while creating output file:", err)
+		return err
+	}
+
+	err = jpeg.Encode(outFile, finalImage, nil)
+	if err != nil {
+		log.Println("Error while encoding output file:", err)
 		return err
 	}
 	return nil
@@ -110,7 +104,7 @@ func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resu
 		if len(filePath) == 0 {
 			continue
 		}
-		// The file ends with %5d.png, we need to get the number from the file name as the file index
+		// The file ends with %5d.jpg, we need to get the number from the file name as the file index
 		fileIndex := filePath[len(filePath)-9 : len(filePath)-4]
 		// Replace the leading zeros
 		for fileIndex[0] == '0' {
@@ -126,7 +120,7 @@ func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resu
 			log.Fatal(err)
 		}
 
-		img, err := png.Decode(file)
+		img, err := jpeg.Decode(file)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -138,16 +132,22 @@ func pixelAdditionWorker(filePathChannel <-chan string, wg *sync.WaitGroup, resu
 			matrix = make([]uint32, 4*width*height)
 		}
 
-		imageWithPixAccess, couldCast := img.(*image.RGBA)
-		if !couldCast {
-			log.Fatal("Was unable to access pix of image")
-		}
-
-		for pixelIndex, pixelValue := range imageWithPixAccess.Pix {
+		for pixelIndex, pixelValue := range getJPEGPixel(img) {
 			matrix[pixelIndex] += uint32(pixelValue) * uint32(w)
 		}
 
 		file.Close()
 	}
 	resultPixels <- matrix
+}
+
+func getJPEGPixel(img image.Image) []uint8 {
+	if cimg, ok := img.(*image.RGBA); ok {
+		return cimg.Pix
+	}
+
+	b := img.Bounds()
+	dst := image.NewRGBA(b)
+	draw.Draw(dst, b, img, b.Min, draw.Src)
+	return dst.Pix
 }
