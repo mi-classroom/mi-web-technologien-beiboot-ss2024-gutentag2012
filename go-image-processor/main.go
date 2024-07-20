@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
-	"strings"
-
 	amqp "github.com/rabbitmq/amqp091-go"
+	"log"
 )
 
 type AmqpMessage struct {
@@ -110,13 +108,4 @@ func main() {
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
-}
-
-func getFrameOutputPathFromLocalPath(localPath string) (string, string) {
-	// The path potentially is inside the cache, we do not want that
-	localPath = strings.Replace(localPath, "/cache", "", 1)
-
-	paths := strings.Split(localPath, ".")
-	folder := "." + paths[1] + "-frames"
-	return folder, folder + "/%5d.png"
 }

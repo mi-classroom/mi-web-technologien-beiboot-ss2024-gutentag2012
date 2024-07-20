@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -37,7 +38,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 		log.Println("Could not message API")
 	}
 
-	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Filename, "create-stack")
+	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Filename)
 	if err != nil {
 		log.Println("Error while downloading file from Minio:", err)
 		return err
@@ -54,8 +55,10 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 		log.Println("Could not message API")
 	}
 
-	outputFolder, outputPath := getFrameOutputPathFromLocalPath(localPath)
-	err = os.MkdirAll(outputFolder, os.ModePerm)
+	randomIdentifier := strconv.Itoa(rand.Intn(1000000))
+	workingDir := "./tmp/" + project + "-stack-" + randomIdentifier
+	outputPath := workingDir + "/%5d.png"
+	err = os.MkdirAll(workingDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error while creating output folder:", err)
 		return err
@@ -80,7 +83,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	}
 
 	minioOutputFolder := project + fmt.Sprintf("/output--scale=%d--frameRate=%d--from=%s--to=%s/", data.Scale, data.FrameRate, strings.ReplaceAll(data.FromTime, ":", "-"), strings.ReplaceAll(data.ToTime, ":", "-"))
-	err = uploadFolderToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, outputFolder)
+	err = uploadFolderToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, workingDir)
 	if err != nil {
 		log.Println("Error while uploading frames to Minio:", err)
 		return err
@@ -97,7 +100,7 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 		log.Println("Could not message API")
 	}
 
-	err = os.RemoveAll("./tmp/create-stack/" + project)
+	err = os.RemoveAll(workingDir)
 	if err != nil {
 		log.Println("Error while removing project folder:", err)
 		return err
@@ -138,7 +141,9 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		log.Println("Could not message API")
 	}
 
-	err = os.MkdirAll("./tmp/generate-image/"+data.Project+"/"+data.Stack+"/outputs", os.ModePerm)
+	randomIdentifier := strconv.Itoa(rand.Intn(1000000))
+	workingDir := "./tmp/" + data.Project + "-image-" + randomIdentifier
+	err = os.MkdirAll(workingDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error while creating image-gen folder:", err)
 		return err
@@ -157,7 +162,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		}
 	}
 
-	filePaths, err := downloadFilesFromMinio(ctx, minioClient, env.MinioBucketName, fileNames, "generate-image")
+	filePaths, err := downloadFilesFromMinio(ctx, minioClient, env.MinioBucketName, fileNames)
 	if err != nil {
 		log.Println("Error while downloading frames from Minio:", err)
 		return err
@@ -174,7 +179,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		log.Println("Could not message API")
 	}
 
-	outPath := "./tmp/generate-image/" + data.Project + "/" + data.Stack + "/outputs/" + outFileName + ".png"
+	outPath := workingDir + "/" + outFileName + ".png"
 	err = averagePixelValues(filePaths, outPath, data.Weights, totalUsedWeights)
 	if err != nil {
 		log.Println("Error while averaging pixel values:", err)
@@ -210,7 +215,7 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 		log.Println("Could not message API")
 	}
 
-	err = os.RemoveAll("./tmp/generate-image/" + data.Project)
+	err = os.RemoveAll(workingDir)
 	if err != nil {
 		log.Println("Error while removing project folder:", err)
 		return err
@@ -229,7 +234,9 @@ const MaxStepsThumbnail = 3
 func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, data GenerateThumbnailMessage) error {
 	log.Println("Generating thumbnail for project:", data.Project)
 
-	err := os.MkdirAll("./tmp/generate-thumbnail/"+data.Project, os.ModePerm)
+	randomIdentifier := strconv.Itoa(rand.Intn(1000000))
+	workingDir := "./tmp/" + data.Project + "-" + randomIdentifier
+	err := os.MkdirAll(workingDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error while creating image-gen folder:", err)
 		return err
@@ -246,7 +253,7 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 		log.Println("Could not message API")
 	}
 
-	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Project+"/"+data.File, "generate-thumbnail")
+	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Project+"/"+data.File)
 	if err != nil {
 		log.Println("Error while downloading file from Minio:", err)
 		return err
@@ -264,7 +271,8 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 		log.Println("Could not message API")
 	}
 
-	err = splitThumbnailFromVideo(env.FfmpegPath, localPath, "./tmp/generate-thumbnail/"+data.Project+"/thumbnail.png")
+	outPath := workingDir + "/thumbnail.png"
+	err = splitThumbnailFromVideo(env.FfmpegPath, localPath, outPath)
 	if err != nil {
 		log.Println("Error while generating thumbnail:", err)
 		return err
@@ -283,7 +291,7 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 	}
 
 	minioOutputFolder := data.Project + "/thumbnail.png"
-	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, "./tmp/generate-thumbnail/"+data.Project+"/thumbnail.png")
+	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, outPath)
 	if err != nil {
 		log.Println("Error while uploading thumbnail to Minio:", err)
 		return err
@@ -301,7 +309,7 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 		log.Println("Could not message API")
 	}
 
-	err = os.RemoveAll("./tmp/generate-thumbnail/" + data.Project)
+	err = os.RemoveAll(workingDir)
 	if err != nil {
 		log.Println("Error while removing project folder:", err)
 		return err

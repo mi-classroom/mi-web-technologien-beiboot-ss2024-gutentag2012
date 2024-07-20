@@ -22,8 +22,8 @@ func setupMinioClient(env Env) *minio.Client {
 	return minioClient
 }
 
-func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectName string, prefix string) (string, error) {
-	filePath := getCachedPath("./tmp/" + prefix + "/" + objectName)
+func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectName string) (string, error) {
+	filePath := getCachedPath("./tmp/" + objectName)
 	if isCached(filePath) {
 		return filePath, nil
 	}
@@ -36,7 +36,7 @@ func downloadFileFromMinio(ctx context.Context, minioClient *minio.Client, bucke
 	return filePath, nil
 }
 
-func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectNames []string, prefix string) ([]string, error) {
+func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, bucketName string, objectNames []string) ([]string, error) {
 	maxDownloadWorkers := 30
 	guard := make(chan struct{}, maxDownloadWorkers)
 	downloadedFiles := make(chan string, len(objectNames))
@@ -46,7 +46,7 @@ func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, buck
 	for _, objectName := range objectNames {
 		guard <- struct{}{} // would block if guard channel is already filled
 		go func() {
-			filepath, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName, prefix)
+			filepath, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName)
 
 			downloadedFiles <- filepath
 
@@ -61,7 +61,7 @@ func downloadFilesFromMinio(ctx context.Context, minioClient *minio.Client, buck
 	for _, objectName := range retryFiles {
 		guard <- struct{}{}
 		go func() {
-			filepath, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName, prefix)
+			filepath, err := downloadFileFromMinio(ctx, minioClient, bucketName, objectName)
 
 			downloadedFiles <- filepath
 

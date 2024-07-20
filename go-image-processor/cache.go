@@ -9,26 +9,7 @@ import (
 )
 
 func getCachedPath(tmpPath string) string {
-	pathToCacheWithType := strings.Replace(tmpPath, "/tmp/", "/tmp/cache/", 1)
-
-	// Remove the part after cache/ e.g. /tmp/cache/stacks/stack1/stack1.zip -> /tmp/cache/stack1/stack1.zip
-	pathsToCache := strings.Split(pathToCacheWithType, "/")
-
-	indexOfAfterCache := -1
-	for i, part := range pathsToCache {
-		if part == "cache" {
-			indexOfAfterCache = i + 1
-			break
-		}
-	}
-	if indexOfAfterCache == -1 {
-		return tmpPath
-	}
-
-	pathsToCache = append(pathsToCache[:indexOfAfterCache], pathsToCache[indexOfAfterCache+1:]...)
-	pathToCache := strings.Join(pathsToCache, "/")
-
-	return pathToCache
+	return strings.Replace(tmpPath, "/tmp/", "/tmp/cache/", 1)
 }
 
 func isCached(path string) bool {
