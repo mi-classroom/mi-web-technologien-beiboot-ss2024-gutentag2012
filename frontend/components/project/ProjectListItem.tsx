@@ -38,7 +38,7 @@ export async function ProjectListItem({ project }: ProjectPreviewCardProps) {
 						priority
 						width={300}
 						height={192}
-						src={getImagePath(project.name, "thumbnail.png")}
+						src={getImagePath(project.name, "thumbnail.jpg")}
 						alt={project.name}
 					/>
 					<div className="px-4 py-2">

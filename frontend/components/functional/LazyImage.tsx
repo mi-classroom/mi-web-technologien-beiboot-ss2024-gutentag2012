@@ -11,22 +11,21 @@ const runningLoadingDebounce = new Map<string, number>()
 let loadingDebounceListener = null as null | IntersectionObserver
 if(typeof window !== 'undefined') {
   loadingDebounceListener = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
+    for (const entry of entries) {
       const id = entry.target.id;
       if(!entry.isIntersecting) {
         const timeout = runningLoadingDebounce.get(id)
-        if (!timeout) return
+        if (!timeout) continue;
 
         clearTimeout(timeout)
         runningLoadingDebounce.delete(id)
-        return
+        continue;
       }
 
       const debounceLoading = window.setTimeout(() => {
         const img = entry.target as HTMLImageElement
         img.src = img.dataset.src as string
         img.addEventListener('load', () => {
-          console.log("Loaded")
           loadedImages.value = [
             ...loadedImages.peek(),
             id
@@ -36,7 +35,7 @@ if(typeof window !== 'undefined') {
         })
       }, 200)
       runningLoadingDebounce.set(id, debounceLoading)
-    })
+    }
   }, {
     root: null,
     rootMargin: '0px',
@@ -59,7 +58,8 @@ export function LazyImage({src, className, ...props}: React.ImgHTMLAttributes<HT
     const img = ref.current as HTMLImageElement
     loadingDebounceListener.observe(img)
     return () => {
-      loadingDebounceListener!.unobserve(img)
+      if(!loadingDebounceListener) return
+      loadingDebounceListener.unobserve(img)
     }
   }, []);
 
@@ -72,6 +72,7 @@ export function LazyImage({src, className, ...props}: React.ImgHTMLAttributes<HT
       data-src={src}
       className={cn(opacity.value, 'transition-opacity', className)}
       loading="lazy"
+      alt={props.alt}
     />
   )
 }
