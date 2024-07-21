@@ -25,7 +25,9 @@ export type ResultImage = {
 };
 
 export async function getAllProjects(): Promise<Array<Project>> {
-	return fetch(`${getServerApiUrl()}/projects`, { next: { tags: ["projects"] } })
+	return fetch(`${getServerApiUrl()}/projects`, {
+		next: { tags: ["projects"] },
+	})
 		.then((res) => res.json())
 		.catch((e) => {
 			console.error(e);

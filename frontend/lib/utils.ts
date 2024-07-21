@@ -1,4 +1,4 @@
-import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
+import { getPublicApiUrl, getServerApiUrl } from "@/lib/env";
 import type { Project } from "@/lib/repos/project.repo";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";

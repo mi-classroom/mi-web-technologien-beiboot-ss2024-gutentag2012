@@ -20,7 +20,7 @@ export class ImageResultController {
 	@Post()
 	@HttpCode(HttpStatus.OK)
 	async signalChange(@Body() data: ProgressMessageDto) {
-		console.log("Submit to", `image-result.${data.Event}.${data.Identifier}`)
+		console.log("Submit to", `image-result.${data.Event}.${data.Identifier}`);
 		this.eventEmitter.emit(
 			`image-result.${data.Event}.${data.Identifier}`,
 			data,

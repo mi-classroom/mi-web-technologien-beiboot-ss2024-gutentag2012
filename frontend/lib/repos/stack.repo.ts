@@ -1,4 +1,4 @@
-import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
+import { getPublicApiUrl, getServerApiUrl } from "@/lib/env";
 
 export async function createStack(values: {
 	scale: number;

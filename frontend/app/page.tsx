@@ -4,7 +4,7 @@ import {
 	BreadcrumbList,
 	BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import {getAllProjects} from "@/lib/repos/project.repo";
+import { getAllProjects } from "@/lib/repos/project.repo";
 
 export default async function Project() {
 	const projects = await getAllProjects();

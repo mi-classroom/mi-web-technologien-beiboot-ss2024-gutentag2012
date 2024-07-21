@@ -3,6 +3,7 @@
 import { ErrorText, ErrorTextForm } from "@/components/functional/ErrorText";
 import { FrameBlockers } from "@/components/functional/FrameBlockers";
 import { FrameInputs } from "@/components/functional/FrameInputs";
+import { LazyImage } from "@/components/functional/LazyImage";
 import {
 	progressDialogData,
 	updateProgress,
@@ -51,7 +52,6 @@ import {
 } from "@preact/signals-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import {LazyImage} from "@/components/functional/LazyImage";
 
 type CreateImageFormDrawerProps = {
 	projects: Project[];
@@ -247,9 +247,11 @@ export function GenerateImageFormDialog({
 							>
 								<CarouselContent>
 									{availableImages.map(({ name }, i) => (
-										<CarouselItem key={name} className="relative basis-1/1 w-1/5">
+										<CarouselItem
+											key={name}
+											className="relative basis-1/1 w-1/5"
+										>
 											<div className="relative">
-												{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 												<LazyImage
 													id={name}
 													onClick={() => {

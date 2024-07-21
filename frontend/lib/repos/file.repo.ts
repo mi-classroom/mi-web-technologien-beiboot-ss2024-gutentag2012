@@ -1,4 +1,4 @@
-import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
+import { getPublicApiUrl, getServerApiUrl } from "@/lib/env";
 import type { FileUploadState } from "@/lib/hooks/useFileUpload";
 import { parseXhrResponse } from "@/lib/utils";
 import type { Signal } from "@preact/signals-react";

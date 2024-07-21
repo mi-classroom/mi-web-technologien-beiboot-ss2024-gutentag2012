@@ -9,7 +9,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {getPublicApiUrl, getServerApiUrl} from "@/lib/env";
+import { getPublicApiUrl, getServerApiUrl } from "@/lib/env";
 import { getAllProjects } from "@/lib/repos/project.repo";
 import { getProjectFile } from "@/lib/utils";
 import Link from "next/link";

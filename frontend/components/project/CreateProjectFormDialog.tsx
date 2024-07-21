@@ -3,6 +3,10 @@
 import { ErrorText } from "@/components/functional/ErrorText";
 import { FileUploadField } from "@/components/functional/FileUploadFIeld";
 import {
+	progressDialogData,
+	updateProgress,
+} from "@/components/functional/ProgressDialog";
+import {
 	generateImageForm,
 	isGenerateImageDrawerOpen,
 } from "@/components/image/image.signal";
@@ -31,7 +35,9 @@ import {
 import { InputForm } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFileUpload } from "@/lib/hooks/useFileUpload";
+import { listenToProgress } from "@/lib/repos/progress.repo";
 import { getAllProjects } from "@/lib/repos/project.repo";
+import { createImageFromStack } from "@/lib/repos/stack.repo";
 import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
 import {
 	Paths,
@@ -40,10 +46,7 @@ import {
 } from "@formsignals/form-react";
 import { useComputed } from "@preact/signals-react";
 import { useRouter } from "next/navigation";
-import {useEffect} from "react";
-import {progressDialogData, updateProgress} from "@/components/functional/ProgressDialog";
-import {listenToProgress} from "@/lib/repos/progress.repo";
-import {createImageFromStack} from "@/lib/repos/stack.repo";
+import { useEffect } from "react";
 
 export function CreateProjectFormDialog() {
 	const router = useRouter();
@@ -63,7 +66,7 @@ export function CreateProjectFormDialog() {
 				projectFile: null as File | null,
 				prefix: "",
 			},
-			onSubmit: async values => {
+			onSubmit: async (values) => {
 				progressDialogData.value = {
 					CurrentStep: 0,
 					MaxSteps: 0,
@@ -90,9 +93,9 @@ export function CreateProjectFormDialog() {
 						isCreateProjectDrawerOpen.value = false;
 						await form.reset();
 					});
-				})
-			}
-		})
+				});
+			},
+		});
 	}, [form, fileUpload.uploadFile]);
 
 	return (
@@ -107,7 +110,7 @@ export function CreateProjectFormDialog() {
 				<form
 					onSubmit={async (e) => {
 						e.preventDefault();
-						void form.handleSubmit()
+						void form.handleSubmit();
 					}}
 				>
 					<DialogHeader>
