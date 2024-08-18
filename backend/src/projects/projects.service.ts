@@ -115,12 +115,12 @@ export class ProjectsService {
 		if (!project) {
 			throw new HttpException("Project not found", HttpStatus.NOT_FOUND);
 		}
-		if (project.processingJob && isJobProcessing(project.processingJob)) {
-			throw new HttpException(
-				"Cannot delete project while processing",
-				HttpStatus.BAD_REQUEST,
-			);
-		}
+		// if (project.processingJob && isJobProcessing(project.processingJob)) {
+		// 	throw new HttpException(
+		// 		"Cannot delete project while processing",
+		// 		HttpStatus.BAD_REQUEST,
+		// 	);
+		// }
 
 		await this.minioClientService.deleteFolder(project.bucketPrefix);
 		await this.db
