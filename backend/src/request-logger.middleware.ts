@@ -21,7 +21,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
 		});
 		try {
 			next();
-		} catch (error) {
+		} catch (error: any) {
 			this.logger.error(error.message, error.stack);
 			throw error;
 		}
