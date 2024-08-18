@@ -111,4 +111,8 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 | Dockerize                                   | 3h          |
 | Total Issue #4                              | 7h          |
 |                                             |             |
-| Total                                       | 37h         |
+| Move to DB                                  | 12h         |
+| Reploy                                      | 2h          |
+| Total Issue #5                              | 14h         |
+|                                             |             |
+| Total                                       | 51h         |
