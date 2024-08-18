@@ -32,6 +32,7 @@ export class ProjectsService {
 	) {}
 
 	public async getAllProjects() {
+		console.log("Service getting all projects")
 		return this.db
 			.select({
 				id: schema.Projects.id,
@@ -73,7 +74,10 @@ export class ProjectsService {
 					...project,
 					imageStackNames: project.imageStackNames.split(","),
 				})),
-			);
+			).catch(err => {
+				console.log("error Getting things", err)
+				throw err
+			});
 	}
 
 	public async getProjectById(id: number) {
