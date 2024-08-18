@@ -127,6 +127,33 @@ export class MinioClientService {
 			files.map((file) => file.name).filter(Boolean) as string[],
 		);
 	}
+
+	public async isMemoryLimitReached() {
+		const memoryLimit = this.envService.get("MAX_STORAGE_GB")
+		const currentMemoryUsage = await this.getCompleteMemoryUsageInGB();
+		return currentMemoryUsage >= memoryLimit;
+	}
+
+	private async getCompleteMemoryUsageInGB() {
+		const bucketStream = this.minio.client.listObjectsV2(
+			this.minioBucket,
+			"",
+			true,
+			"/",
+		);
+		let totalSize = 0;
+		return new Promise<number>((resolve, reject) => {
+			bucketStream.on("data", (obj) => {
+				totalSize += obj.size;
+			});
+			bucketStream.on("error", (err) => {
+				reject(err);
+			});
+			bucketStream.on("end", () => {
+				resolve(totalSize / (1024 * 1024 * 1024));
+			});
+		});
+	}
 }
 
 export class UnsupportedMimeType extends Error {

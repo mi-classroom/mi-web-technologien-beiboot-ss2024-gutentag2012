@@ -90,6 +90,10 @@ export class StackService {
 	}
 
 	async generateImageForStack(stackId: number, data: GenerateImageDto) {
+		if(await this.minioClientService.isMemoryLimitReached()) {
+			throw new HttpException("Memory limit reached", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
 		const stack = await this.db.query.ImageStacks.findFirst({
 			where: eq(schema.ImageStacks.id, stackId),
 			with: {
@@ -133,6 +137,10 @@ export class StackService {
 	}
 
 	async createStack(data: CreateStackDto) {
+		if(await this.minioClientService.isMemoryLimitReached()) {
+			throw new HttpException("Memory limit reached", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
 		const project = await this.db.query.Projects.findFirst({
 			where: eq(schema.Projects.id, data.projectId),
 		});

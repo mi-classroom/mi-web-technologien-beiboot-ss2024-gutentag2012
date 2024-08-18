@@ -124,6 +124,7 @@ export function CreateProjectFormDialog() {
 								}}
 								validatorAsync={async (value) => {
 									const projects = await getAllProjects();
+									console.log(projects)
 									const nameTaken = projects.some(
 										(project) => project.name === value,
 									);

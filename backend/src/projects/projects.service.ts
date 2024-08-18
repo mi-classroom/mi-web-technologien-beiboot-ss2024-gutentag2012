@@ -146,6 +146,10 @@ export class ProjectsService {
 		file: Express.Multer.File,
 		createProject: CreateProjectDto,
 	) {
+		if(await this.minioClientService.isMemoryLimitReached()) {
+			throw new HttpException("Memory limit reached", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
 		const [processingJob] = await this.db
 			.insert(schema.ProcessingJobs)
 			.values({

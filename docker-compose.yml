@@ -56,6 +56,11 @@ services:
       - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
       - API_URL=http://host.docker.internal:3001
       - CACHE_SIZE_GB=10
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
 
   backend:
     container_name: 'backend'
@@ -79,6 +84,7 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - DB_URL=http://database:8080
+      - MAX_STORAGE_GB=1
 
   frontend:
     container_name: 'frontend'
