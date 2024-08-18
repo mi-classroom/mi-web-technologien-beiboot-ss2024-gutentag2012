@@ -7,60 +7,60 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 )
 
+func getMsTimestamp() int {
+	return int(time.Now().UnixNano() / int64(time.Millisecond))
+}
+
 type CreateStackMessage struct {
-	Filename  string `json:"filename"`
-	Scale     int    `json:"scale"`
-	FrameRate int    `json:"frameRate"`
-	FromTime  string `json:"from"`
-	ToTime    string `json:"to"`
+	Filename        string `json:"videoFile"`
+	ProjectPrefix   string `json:"projectPrefix"`
+	StackPrefix     string `json:"stackPrefix"`
+	FromTime        string `json:"fromTimestamp"`
+	ToTime          string `json:"toTimestamp"`
+	FrameRate       int    `json:"frameRate"`
+	Scale           int    `json:"scale"`
+	ProcessingJobId int    `json:"processingJobId"`
 }
 
 const MaxStepsStack = 3
 
 func createStack(ctx context.Context, env Env, minioClient *minio.Client, data CreateStackMessage) error {
-	project := strings.Split(data.Filename, "/input.")[0]
-	identifier := fmt.Sprintf("%s-%d-%d-%s-%s", data.Filename, data.FrameRate, data.Scale, data.FromTime, data.ToTime)
-
-	log.Println("Creating stack for project:", project)
-	err := sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "create-stack",
-		MaxSteps:    MaxStepsStack,
-		CurrentStep: 0,
-		Message:     "Downloading video file...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
+	log.Println("Creating stack for project:", data.ProjectPrefix)
+	CurrentStep := 1
+	sendProgress := func(status string) {
+		err := sendProgressMessageToAPI(ctx, env, data.ProcessingJobId, ProgressMessage{
+			Status:      status,
+			MaxSteps:    MaxStepsStack,
+			CurrentStep: CurrentStep,
+			Timestamp:   getMsTimestamp(),
+		})
+		CurrentStep += 1
+		if err != nil {
+			log.Println("Could not message API")
+		}
 	}
+	sendProgress("processing")
 
-	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Filename)
+	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.ProjectPrefix+"/"+data.Filename)
 	if err != nil {
 		log.Println("Error while downloading file from Minio:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done downloading file from Minio.")
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "create-stack",
-		MaxSteps:    MaxStepsStack,
-		CurrentStep: 1,
-		Message:     "Extracting frames from video...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("processing")
 
-	randomIdentifier := strconv.Itoa(rand.Intn(1000000))
-	workingDir := "./tmp/" + project + "-stack-" + randomIdentifier
+	workingDir := "./tmp/" + data.StackPrefix
 	outputPath := workingDir + "/%5d.jpg"
 	err = os.MkdirAll(workingDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error while creating output folder:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done creating output folder.")
@@ -68,41 +68,26 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 	err = splitVideoIntoFrames(env.FfmpegPath, localPath, outputPath, data.Scale, data.FrameRate, data.FromTime, data.ToTime)
 	if err != nil {
 		log.Println("Error while splitting video into frames:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Printf("Done splitting video into frames.")
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "create-stack",
-		MaxSteps:    MaxStepsStack,
-		CurrentStep: 2,
-		Message:     "Uploading frames to server...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("processing")
 
-	minioOutputFolder := project + fmt.Sprintf("/output--scale=%d--frameRate=%d--from=%s--to=%s/", data.Scale, data.FrameRate, strings.ReplaceAll(data.FromTime, ":", "-"), strings.ReplaceAll(data.ToTime, ":", "-"))
+	minioOutputFolder := data.ProjectPrefix + "/" + data.StackPrefix + "/"
 	err = uploadFolderToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, workingDir)
 	if err != nil {
 		log.Println("Error while uploading frames to Minio:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Printf("Done uploading frames to Minio.")
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "create-stack",
-		MaxSteps:    MaxStepsStack,
-		CurrentStep: 3,
-		Message:     "Finished process.",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("done")
 
 	err = os.RemoveAll(workingDir)
 	if err != nil {
 		log.Println("Error while removing project folder:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done removing project folder.")
@@ -110,42 +95,39 @@ func createStack(ctx context.Context, env Env, minioClient *minio.Client, data C
 }
 
 type GenerateImageMessage struct {
-	Project string `json:"project"`
-	Stack   string `json:"stack"`
-	Frames  []int  `json:"frames"`
-	Weights []int  `json:"weights"`
+	OutFilename     string `json:"outFilename"`
+	Filename        string `json:"videoFile"`
+	ProjectPrefix   string `json:"projectPrefix"`
+	StackPrefix     string `json:"stackPrefix"`
+	Frames          []int  `json:"frames"`
+	Weights         []int  `json:"weights"`
+	ProcessingJobId int    `json:"processingJobId"`
 }
 
 const MaxStepsImage = 3
 
 func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data GenerateImageMessage) error {
-	log.Println("Generating image for project:", data.Project, "and stack:", data.Stack)
-
-	frameStrings := make([]string, len(data.Frames))
-	for i, num := range data.Frames {
-		frameStrings[i] = strconv.Itoa(num)
-	}
-	frameString := strings.Join(frameStrings, "-")
-
-	identifier := fmt.Sprintf("%s-%s-%s", data.Project, data.Stack, frameString)
-	outFileName := fmt.Sprintf("%s", frameString)
-
-	err := sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "generate-image",
-		MaxSteps:    MaxStepsImage,
-		CurrentStep: 0,
-		Message:     "Downloading frames...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
+	log.Println("Generating image for project:", data.ProjectPrefix)
+	CurrentStep := 0
+	sendProgress := func(status string) {
+		err := sendProgressMessageToAPI(ctx, env, data.ProcessingJobId, ProgressMessage{
+			Status:      status,
+			MaxSteps:    MaxStepsImage,
+			CurrentStep: CurrentStep,
+			Timestamp:   getMsTimestamp(),
+		})
+		CurrentStep += 1
+		if err != nil {
+			log.Println("Could not message API")
+		}
 	}
 
-	randomIdentifier := strconv.Itoa(rand.Intn(1000000))
-	workingDir := "./tmp/" + data.Project + "-image-" + randomIdentifier
-	err = os.MkdirAll(workingDir, os.ModePerm)
+	sendProgress("processing")
+	workingDir := "./tmp/" + data.ProjectPrefix + "/" + data.StackPrefix
+	err := os.MkdirAll(workingDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error while creating image-gen folder:", err)
+		sendProgress("error")
 		return err
 	}
 
@@ -158,66 +140,43 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 
 		for frame := start; frame <= end; frame++ {
 			totalUsedWeights += data.Weights[frame-1]
-			fileNames = append(fileNames, fmt.Sprintf("%s/%s/%05d.jpg", data.Project, data.Stack, frame))
+			fileNames = append(fileNames, fmt.Sprintf("%s/%s/%05d.jpg", data.ProjectPrefix, data.StackPrefix, frame))
 		}
 	}
 
 	filePaths, err := downloadFilesFromMinio(ctx, minioClient, env.MinioBucketName, fileNames)
 	if err != nil {
 		log.Println("Error while downloading frames from Minio:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done downloading frames from Minio.")
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "generate-image",
-		MaxSteps:    MaxStepsImage,
-		CurrentStep: 1,
-		Message:     "Generating image...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("processing")
 
-	outPath := workingDir + "/" + outFileName + ".jpg"
+	outPath := workingDir + "/" + data.OutFilename + ".jpg"
 	err = averagePixelValues(filePaths, outPath, data.Weights, totalUsedWeights)
 	if err != nil {
 		log.Println("Error while averaging pixel values:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done averaging pixel values.")
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "generate-image",
-		MaxSteps:    MaxStepsImage,
-		CurrentStep: 2,
-		Message:     "Uploading image...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("processing")
 
-	minioOutputFolder := data.Project + "/" + data.Stack + "/outputs/" + outFileName + ".jpg"
+	minioOutputFolder := data.ProjectPrefix + "/" + data.StackPrefix + "/outputs/" + data.OutFilename + ".jpg"
 	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, outPath)
 	if err != nil {
 		log.Println("Error while uploading image to Minio:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done uploading image to Minio.")
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  identifier,
-		Event:       "generate-image",
-		MaxSteps:    MaxStepsImage,
-		CurrentStep: 3,
-		Message:     "Finished process.",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("done")
 
 	err = os.RemoveAll(workingDir)
 	if err != nil {
 		log.Println("Error while removing project folder:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done removing project folder.")
@@ -225,14 +184,29 @@ func generateImage(ctx context.Context, env Env, minioClient *minio.Client, data
 }
 
 type GenerateThumbnailMessage struct {
-	Project string `json:"project"`
-	File    string `json:"file"`
+	Project         string `json:"prefix"`
+	File            string `json:"videoFile"`
+	ProcessingJobId int    `json:"processingJobId"`
+	ProjectId       int    `json:"projectId"`
 }
 
-const MaxStepsThumbnail = 3
+const MaxStepsThumbnail = 5
 
-func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, data GenerateThumbnailMessage) error {
+func processProject(ctx context.Context, env Env, minioClient *minio.Client, data GenerateThumbnailMessage) error {
 	log.Println("Generating thumbnail for project:", data.Project)
+	CurrentStep := 0
+	sendProgress := func(status string) {
+		err := sendProgressMessageToAPI(ctx, env, data.ProcessingJobId, ProgressMessage{
+			Status:      status,
+			MaxSteps:    MaxStepsThumbnail,
+			CurrentStep: CurrentStep,
+			Timestamp:   getMsTimestamp(),
+		})
+		CurrentStep += 1
+		if err != nil {
+			log.Println("Could not message API")
+		}
+	}
 
 	randomIdentifier := strconv.Itoa(rand.Intn(1000000))
 	workingDir := "./tmp/" + data.Project + "-" + randomIdentifier
@@ -241,73 +215,64 @@ func generateThumbnail(ctx context.Context, env Env, minioClient *minio.Client, 
 		log.Println("Error while creating image-gen folder:", err)
 		return err
 	}
-
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  data.Project,
-		Event:       "generate-thumbnail",
-		MaxSteps:    MaxStepsThumbnail,
-		CurrentStep: 0,
-		Message:     "Downloading video file...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("processing")
 
 	localPath, err := downloadFileFromMinio(ctx, minioClient, env.MinioBucketName, data.Project+"/"+data.File)
 	if err != nil {
 		log.Println("Error while downloading file from Minio:", err)
+		_ = sendProgressMessageToAPI(ctx, env, data.ProcessingJobId, ProgressMessage{
+			Status:      "error",
+			MaxSteps:    MaxStepsThumbnail,
+			CurrentStep: 0,
+			Timestamp:   getMsTimestamp(),
+		})
 		return err
 	}
 	log.Println("Done downloading file from Minio.")
+	sendProgress("processing")
 
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  data.Project,
-		Event:       "generate-thumbnail",
-		MaxSteps:    MaxStepsThumbnail,
-		CurrentStep: 1,
-		Message:     "Extracting thumbnail from video...",
+	meta, err := getVideoMetaData(env.FfprobePath, localPath)
+	if err != nil {
+		log.Println("Error while getting video meta data:", err)
+		sendProgress("error")
+		return err
+	}
+	log.Println("Done getting video meta data.")
+	sendProgress("processing")
+
+	err = sendProjectMetaToAPI(ctx, env, data.ProjectId, ProjectMeta{
+		MaxWidth:     meta.MaxWidth,
+		MaxHeight:    meta.MaxHeight,
+		MaxFrameRate: meta.MaxFrameRate,
+		Duration:     meta.Duration,
 	})
 	if err != nil {
 		log.Println("Could not message API")
+		sendProgress("error")
+		return err
 	}
+	log.Println("Done sending project meta data.")
+	sendProgress("processing")
 
 	outPath := workingDir + "/thumbnail.jpg"
 	err = splitThumbnailFromVideo(env.FfmpegPath, localPath, outPath)
 	if err != nil {
 		log.Println("Error while generating thumbnail:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done generating thumbnail.")
-
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  data.Project,
-		Event:       "generate-thumbnail",
-		MaxSteps:    MaxStepsThumbnail,
-		CurrentStep: 2,
-		Message:     "Uploading thumbnail...",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("processing")
 
 	minioOutputFolder := data.Project + "/thumbnail.jpg"
 	err = uploadFileToMinio(ctx, minioClient, env.MinioBucketName, minioOutputFolder, outPath)
 	if err != nil {
 		log.Println("Error while uploading thumbnail to Minio:", err)
+		sendProgress("error")
 		return err
 	}
 	log.Println("Done uploading thumbnail to Minio.")
-
-	err = sendProgressMessageToAPI(ctx, env, ProgressMessage{
-		Identifier:  data.Project,
-		Event:       "generate-thumbnail",
-		MaxSteps:    MaxStepsThumbnail,
-		CurrentStep: 3,
-		Message:     "Finished process.",
-	})
-	if err != nil {
-		log.Println("Could not message API")
-	}
+	sendProgress("done")
 
 	err = os.RemoveAll(workingDir)
 	if err != nil {

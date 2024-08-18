@@ -1,4 +1,4 @@
-import { uploadVideoFile } from "@/lib/repos/file.repo";
+import { createProject } from "@/lib/repos/project.repo";
 import { type Signal, useComputed, useSignal } from "@preact/signals-react";
 import { useCallback } from "react";
 
@@ -26,7 +26,7 @@ export type FileUploadState =
 	| IdleState
 	| ErrorState;
 
-export const useFileUpload = (file: Signal<File | null>) => {
+export const useCreateProject = (file: Signal<File | null>) => {
 	const status = useSignal<FileUploadState>({ state: "idle" });
 	const uploadedFile = useSignal<string | undefined>(undefined);
 
@@ -42,9 +42,9 @@ export const useFileUpload = (file: Signal<File | null>) => {
 			status.value.data.originalFilename === file.value?.name,
 	);
 
-	const uploadFile = useCallback(
-		async (additionalData?: Array<[string, string]>) => {
-			return uploadVideoFile(file.peek(), additionalData, status);
+	const createProjectFn = useCallback(
+		async (additionalData?: Array<[string, unknown]>) => {
+			return createProject(file.peek(), additionalData, status);
 		},
 		[status, file],
 	);
@@ -52,7 +52,7 @@ export const useFileUpload = (file: Signal<File | null>) => {
 	return {
 		uploadedFile,
 		isUploading,
-		uploadFile,
+		createProject: createProjectFn,
 		progressText,
 		isFileUploaded,
 	};

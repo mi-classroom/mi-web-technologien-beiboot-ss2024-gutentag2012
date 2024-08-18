@@ -4,7 +4,7 @@ import {
 	generateImageForm,
 	isGenerateImageDrawerOpen,
 } from "@/components/image/image.signal";
-import { DeleteFolderContextMenuItem } from "@/components/project/DeleteFolderContextMenuItem";
+import { DeleteImageContextMenuItem } from "@/components/stack/DeleteImageContextMenuItem";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -28,7 +28,7 @@ import {
 	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import type { ResultImage } from "@/lib/repos/project.repo";
+import type { ProjectFull, ResultImage, Stack } from "@/lib/repos/project.repo";
 import { getImagePath } from "@/lib/utils";
 import { batch } from "@preact/signals-react";
 import { ExternalLinkIcon, ImagePlusIcon, PencilLineIcon } from "lucide-react";
@@ -36,14 +36,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 type ResultCarouselProps = {
-	results: ResultImage[];
+	results: [ProjectFull, Stack, ResultImage][];
 	className?: string;
 };
 
 export function ResultCarousel({ results, className }: ResultCarouselProps) {
-	const sortedResults = results.toSorted(
-		(a, b) => (b.lastModified ?? 0) - (a.lastModified ?? 0),
-	);
 	return (
 		<Card className={className}>
 			<CardHeader>
@@ -51,16 +48,18 @@ export function ResultCarousel({ results, className }: ResultCarouselProps) {
 				<CardDescription>Manage your results</CardDescription>
 			</CardHeader>
 			<CardContent>
-				{sortedResults.length === 0 ? (
+				{results.length === 0 ? (
 					<p className="text-muted-foreground text-center mt-4">
 						No results found
 					</p>
 				) : (
 					<Carousel className="mb-2 mx-10">
 						<CarouselContent>
-							{sortedResults.map((result) => (
+							{results.map(([project, stack, result]) => (
 								<CarouselItem
-									key={result.project + result.stack + result.name}
+									key={
+										project.bucketPrefix + stack.bucketPrefix + result.filename
+									}
 									className="basis-1/1 relative"
 								>
 									<ContextMenu>
@@ -68,10 +67,10 @@ export function ResultCarousel({ results, className }: ResultCarouselProps) {
 											<Link
 												className="relative"
 												href={getImagePath(
-													result.project,
-													result.stack,
+													project.bucketPrefix,
+													stack.bucketPrefix,
 													"outputs",
-													result.name,
+													result.filename,
 												)}
 												target="_blank"
 											>
@@ -81,33 +80,22 @@ export function ResultCarousel({ results, className }: ResultCarouselProps) {
 													width={660}
 													height={400}
 													src={getImagePath(
-														result.project,
-														result.stack,
+														project.bucketPrefix,
+														stack.bucketPrefix,
 														"outputs",
-														result.name,
+														result.filename,
 													)}
-													alt={result.name}
+													alt={result}
 												/>
-												<p className="absolute top-0 left-0 rounded-br bg-background text-accent-foreground p-2 text-xs">
-													Frames:{" "}
-													{result.frames
-														.reduce((acc, frame, i, arr) => {
-															const isStartFrame = i % 2 === 0;
-															if (!isStartFrame) return acc;
-															acc.push(`${frame} - ${arr[i + 1]}`);
-															return acc;
-														}, [] as string[])
-														.join(", ")}
-												</p>
 											</Link>
 										</ContextMenuTrigger>
 										<ContextMenuContent>
 											<Link
 												href={getImagePath(
-													result.project,
-													result.stack,
+													project.bucketPrefix,
+													stack.bucketPrefix,
 													"outputs",
-													result.name,
+													result.filename,
 												)}
 												target="_blank"
 											>
@@ -120,16 +108,16 @@ export function ResultCarousel({ results, className }: ResultCarouselProps) {
 												onClick={() => {
 													batch(() => {
 														generateImageForm.handleChange(
-															"project" as never,
-															result.project as never,
-														);
-														generateImageForm.handleChange(
 															"stack" as never,
-															result.stack as never,
+															`${stack.id}` as never,
 														);
 														generateImageForm.handleChange(
 															"frames" as never,
 															result.frames as never,
+														);
+														generateImageForm.handleChange(
+															"weights" as never,
+															result.weights as never,
 														);
 													});
 													isGenerateImageDrawerOpen.value = true;
@@ -139,14 +127,7 @@ export function ResultCarousel({ results, className }: ResultCarouselProps) {
 												Create variant
 											</ContextMenuItem>
 											<ContextMenuSeparator />
-											<DeleteFolderContextMenuItem
-												paths={[
-													result.project,
-													result.stack,
-													"outputs",
-													result.name,
-												]}
-											/>
+											<DeleteImageContextMenuItem imageId={result.id} />
 										</ContextMenuContent>
 									</ContextMenu>
 								</CarouselItem>

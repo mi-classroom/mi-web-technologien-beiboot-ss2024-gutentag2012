@@ -1,7 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ClientRMQ, RmqRecordBuilder } from "@nestjs/microservices";
-import { GenerateImageDto } from "../video-processor/dto/GenerateImage.dto";
-import { ProcessVideoDto } from "../video-processor/dto/ProcessVideo.dto";
 
 @Injectable()
 export class AmqpClientService {
@@ -9,27 +7,15 @@ export class AmqpClientService {
 		this.client.connect();
 	}
 
-	async sendCreateStackRequest(processVideoDto: ProcessVideoDto) {
-		const message = new RmqRecordBuilder()
-			.setData(processVideoDto)
-			.setOptions({ persistent: true })
-			.build();
-		this.client.emit("create-stack", message);
+	async onModuleDestroy() {
+		await this.client.close();
 	}
 
-	public async sendGenerateImageRequest(generateImage: GenerateImageDto) {
-		const message = new RmqRecordBuilder()
-			.setData(generateImage)
-			.setOptions({ persistent: true })
+	async sendMessage(queue: string, message: unknown, persistent = true) {
+		const rmqRecord = new RmqRecordBuilder()
+			.setData(message)
+			.setOptions({ persistent })
 			.build();
-		this.client.emit("generate-image", message);
-	}
-
-	public async sendGenerateThumbnailRequest(project: string, file: string) {
-		const message = new RmqRecordBuilder()
-			.setData({ project, file })
-			.setOptions({ persistent: true })
-			.build();
-		this.client.emit("generate-thumbnail", message);
+		this.client.emit(queue, rmqRecord);
 	}
 }

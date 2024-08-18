@@ -14,16 +14,17 @@ type ProjectsDropdownProps = {
 
 export async function ProjectsDropdown({ selection }: ProjectsDropdownProps) {
 	const projects = await getAllProjects();
+	const selectedProject = projects.find((project) => project.id === +selection);
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger className="flex items-center gap-1">
-				{selection}
+				{selectedProject?.name}
 				<ChevronDownIcon />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start">
 				{projects.map((project) => (
-					<Link key={project.name} href={`/${project.name}`}>
+					<Link key={project.id} href={`/${project.id}`}>
 						<DropdownMenuItem>{project.name}</DropdownMenuItem>
 					</Link>
 				))}

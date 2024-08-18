@@ -2,11 +2,15 @@ import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
 export const ProgressMessageSchema = z.object({
-	Event: z.string().min(1),
-	Identifier: z.string().min(1),
+	Status: z.union([
+		z.literal("queued"),
+		z.literal("processing"),
+		z.literal("done"),
+		z.literal("error"),
+	]),
 	CurrentStep: z.number(),
 	MaxSteps: z.number(),
-	Message: z.string(),
+	Timestamp: z.number(),
 });
 
 export class ProgressMessageDto extends createZodDto(ProgressMessageSchema) {}

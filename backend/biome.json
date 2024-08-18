@@ -18,6 +18,7 @@
 		}
 	},
 	"files": {
-		"include": ["src/**/*.ts"]
+		"include": ["src/**/*.ts"],
+		"ignore": ["src/**/*.d.ts"]
 	}
 }

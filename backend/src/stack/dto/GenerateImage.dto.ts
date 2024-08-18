@@ -2,8 +2,6 @@ import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
 export const GenerateImageSchema = z.object({
-	project: z.string().min(1),
-	stack: z.string().min(1),
 	frames: z
 		.array(z.number())
 		.min(2)

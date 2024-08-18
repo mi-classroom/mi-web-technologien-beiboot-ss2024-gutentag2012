@@ -47,3 +47,39 @@ func splitThumbnailFromVideo(ffmpegPath string, input string, output string) err
 	cmd := exec.Command(ffmpegPath, args...)
 	return cmd.Run()
 }
+
+type VideoMeta struct {
+	MaxWidth int
+	MaxHeight int
+	MaxFrameRate int
+	Duration    int
+}
+
+func getVideoMetaData(ffprobePath string, input string) (VideoMeta, error) {
+	args := []string{
+		"-v", "error",
+		"-select_streams", "v:0",
+		"-show_entries", "stream=width,height,r_frame_rate,duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		input,
+	}
+
+	cmd := exec.Command(ffprobePath, args...)
+	out, err := cmd.Output()
+	if err != nil {
+		return VideoMeta{}, err
+	}
+
+	var width, height, frameRateNumerator, frameRateDenominator, duration int
+	_, err = fmt.Sscanf(string(out), "%d\n%d\n%d/%d\n%d", &width, &height, &frameRateNumerator, &frameRateDenominator, &duration)
+	if err != nil {
+		return VideoMeta{}, err
+	}
+
+	return VideoMeta{
+		MaxWidth:     width,
+		MaxHeight:    height,
+		MaxFrameRate: (frameRateNumerator / frameRateDenominator) + 1,
+		Duration:     duration,
+	}, nil
+}

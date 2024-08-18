@@ -6,6 +6,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getAllProjects } from "@/lib/repos/project.repo";
 
+export const dynamic = "force-dynamic";
+
 export default async function Project() {
 	const projects = await getAllProjects();
 	return (

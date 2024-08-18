@@ -1,5 +1,3 @@
-import { getPublicApiUrl, getServerApiUrl } from "@/lib/env";
-import type { Project } from "@/lib/repos/project.repo";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -18,10 +16,6 @@ export function getImagePath(...parts: string[]) {
 	return `/media/file-upload/get/${combined}`;
 }
 
-export function getProjectFile(project: Project) {
-	return project.otherFiles.find((file) => file.includes("/input.")) ?? "";
-}
-
 export function parseXhrResponse(xhr: XMLHttpRequest) {
 	if (!xhr.responseText) return null;
 	if (xhr.getResponseHeader("Content-Type")?.includes("application/json")) {
@@ -32,6 +26,15 @@ export function parseXhrResponse(xhr: XMLHttpRequest) {
 		}
 	}
 	return xhr.responseText;
+}
+
+export function timeStringToMillis(duration?: string | null) {
+	if (!duration) return 0;
+
+	const [hours, minutes, seconds] = duration
+		.split(":")
+		.map((v) => Number.parseInt(v));
+	return (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
 }
 
 export function validateTimeStringLessThan(duration?: string | null) {

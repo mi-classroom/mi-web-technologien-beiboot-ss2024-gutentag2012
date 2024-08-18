@@ -41,7 +41,7 @@ export function Commander({ projects }: CommanderProps) {
 			for (let i = 0; i < 10; i++) {
 				if (!projects[i]) continue;
 				if (e.key === (i + 1).toString() && (e.metaKey || e.altKey)) {
-					router.push(projects[i].name);
+					router.push(projects[i].id.toString());
 				}
 			}
 			if (e.key === "0" && (e.metaKey || e.altKey)) {
@@ -71,7 +71,7 @@ export function Commander({ projects }: CommanderProps) {
 							<CommandItem
 								key={project.name}
 								onSelect={() => {
-									router.push(project.name);
+									router.push(project.id.toString());
 									setOpen(false);
 								}}
 							>

@@ -1,10 +1,11 @@
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
-export const ProcessVideoSchema = z
+export const CreateStackSchema = z
 	.object({
-		filename: z.string().min(1),
+		projectId: z.number(),
 		scale: z.number().min(-1).optional().default(-1),
+		name: z.string().min(1),
 		from: z.string().time().or(z.literal("")),
 		to: z.string().time().or(z.literal("")),
 		frameRate: z.number().min(-1).optional().default(-1),
@@ -27,4 +28,4 @@ export const ProcessVideoSchema = z
 		);
 	}, "The to timestamp must be greater than from timestamp.");
 
-export class ProcessVideoDto extends createZodDto(ProcessVideoSchema) {}
+export class CreateStackDto extends createZodDto(CreateStackSchema) {}

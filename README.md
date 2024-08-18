@@ -56,9 +56,9 @@ Für die lokale Entwicklung werden folgende Tools benötigt:
 
 Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgeführt werden (Für jeden Service sollte ein neues Terminal geöffnet werden):
 
-1. Minio + RabbitMQ + Reverse Proxy
+1. Minio + RabbitMQ + Reverse Proxy + Database
     ```bash
-    docker-compose up -d minio rabbitmq reverse-proxy
+    docker-compose up -d minio rabbitmq reverse-proxy database
     ```
 2. Kopiere die `.env.example` Datei in `.env` und ändere ggfs. die Werte
     ```bash

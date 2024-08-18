@@ -1,46 +1,19 @@
 import {
-	Body,
 	Controller,
-	Delete,
 	Get,
 	HttpException,
 	HttpStatus,
 	Param,
-	Post,
 	Req,
 	Res,
-	UploadedFile,
-	UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { Express, Request, Response } from "express";
+import { Request, Response } from "express";
 import { lookup } from "mime-types";
-import { UnsupportedMimeType } from "../minio-client/minio-client.service";
 import { FileUploadService } from "./file-upload.service";
 
 @Controller("file-upload")
 export class FileUploadController {
 	constructor(private readonly fileUploadService: FileUploadService) {}
-
-	@Post()
-	@UseInterceptors(FileInterceptor("video"))
-	async uploadFile(
-		@UploadedFile() file: Express.Multer.File,
-		@Body() body: { prefix?: string; newName?: string },
-	) {
-		if (!file) {
-			throw new HttpException("No file uploaded", HttpStatus.BAD_REQUEST);
-		}
-		return this.fileUploadService.upload(file, body).catch((err) => {
-			if (err instanceof UnsupportedMimeType) {
-				throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
-			}
-			throw new HttpException(
-				`Error uploading file ${err?.message ?? err}`,
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		});
-	}
 
 	private async sendWholeFile(filename: string, res: Response) {
 		const file = await this.fileUploadService.getFile(filename).catch((err) => {
@@ -104,20 +77,5 @@ export class FileUploadController {
 		} else {
 			await this.sendPartialFile(filename, range, res);
 		}
-	}
-
-	@Get("/list/:folder")
-	async listFiles(@Param("folder") folder: string) {
-		return this.fileUploadService.listFiles(folder);
-	}
-
-	@Get("/exists/:filename")
-	async fileExists(@Param("filename") filename: string) {
-		return this.fileUploadService.fileExists(filename);
-	}
-
-	@Delete("/delete/:folder")
-	async deleteFolder(@Param("folder") folder: string) {
-		return this.fileUploadService.deleteFolder(folder);
 	}
 }

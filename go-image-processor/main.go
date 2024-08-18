@@ -86,7 +86,7 @@ func main() {
 				if err != nil {
 					log.Println("Error while processing message", err)
 				}
-			case "generate-thumbnail":
+			case "process-project":
 				messageData := GenerateThumbnailMessage{}
 				err := json.Unmarshal(message.Data, &messageData)
 				if err != nil {
@@ -94,7 +94,7 @@ func main() {
 					continue
 				}
 
-				err = generateThumbnail(ctx, env, minio, messageData)
+				err = processProject(ctx, env, minio, messageData)
 				if err != nil {
 					log.Println("Error while processing message", err)
 				}
