@@ -46,7 +46,7 @@ export class FileUploadController {
 	) {
 		const fileStats = await this.fileUploadService.getFileStats(filename);
 
-		const CHUNK_SIZE = 10 ** 6; // 1MB chunk size
+		const CHUNK_SIZE = (10 ** 6) * 4; // 4MB chunk size
 		const start = Number(range.replace(/\D/g, ""));
 		const end = Math.min(start + CHUNK_SIZE, fileStats.size - 1);
 
