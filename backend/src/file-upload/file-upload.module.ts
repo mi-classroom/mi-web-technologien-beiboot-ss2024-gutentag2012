@@ -5,8 +5,9 @@ import { FileUploadController } from "./file-upload.controller";
 import { FileUploadService } from "./file-upload.service";
 
 @Module({
-	imports: [MinioClientModule, AmqpClientModule],
+	imports: [MinioClientModule],
 	controllers: [FileUploadController],
 	providers: [FileUploadService],
+	exports: [FileUploadService],
 })
 export class FileUploadModule {}

@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { CarouselApi } from "@/components/ui/carousel";
 import { InputSignal } from "@/components/ui/input";
 import { useFieldContext } from "@formsignals/form-react";
 import type { Signal } from "@preact/signals-react";

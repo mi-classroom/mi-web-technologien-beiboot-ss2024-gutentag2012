@@ -4,7 +4,6 @@ import {
 	generateImageForm,
 	isGenerateImageDrawerOpen,
 } from "@/components/image/image.signal";
-import { DeleteFolderContextMenuItem } from "@/components/project/DeleteFolderContextMenuItem";
 import { CreateStackButton } from "@/components/stack/CreateStackButton";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,18 +36,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { deleteFolder } from "@/lib/repos/file.repo";
 import type { Stack } from "@/lib/repos/project.repo";
+import { deleteStack } from "@/lib/repos/stack.repo";
 import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
-import { getImagePath } from "@/lib/utils";
-import {
-	EllipsisVerticalIcon,
-	ExternalLinkIcon,
-	ImagePlusIcon,
-	PencilLineIcon,
-	Trash2Icon,
-} from "lucide-react";
-import Link from "next/link";
+import { EllipsisVerticalIcon, ImagePlusIcon, Trash2Icon } from "lucide-react";
 
 type StackTableProps = {
 	stacks: Stack[];
@@ -56,7 +47,7 @@ type StackTableProps = {
 };
 
 const generateForStack = (stack: Stack) => () => {
-	generateImageForm.handleChange("stack" as never, stack.name as never);
+	generateImageForm.handleChange("stack" as never, `${stack.id}` as never);
 	isGenerateImageDrawerOpen.value = true;
 };
 
@@ -101,7 +92,7 @@ export function StackTable({ stacks, className }: StackTableProps) {
 											<TableCell>{stack.to || "-"}</TableCell>
 											<TableCell>{stack.frameRate}</TableCell>
 											<TableCell>{stack.scale}</TableCell>
-											<TableCell>{stack.results.length}</TableCell>
+											<TableCell>{stack.totalResultCount}</TableCell>
 											<TableCell align="right">
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
@@ -118,8 +109,8 @@ export function StackTable({ stacks, className }: StackTableProps) {
 														<DropdownMenuItem
 															className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
 															onClick={async () => {
-																await deleteFolder(stack.project, stack.name);
-																await serverRevalidateTag("projects");
+																await deleteStack(stack.id);
+																await serverRevalidateTag("stacks");
 															}}
 														>
 															<Trash2Icon className="h-4 w-4 mr-2" />
@@ -139,8 +130,8 @@ export function StackTable({ stacks, className }: StackTableProps) {
 										<ContextMenuItem
 											className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
 											onClick={async () => {
-												await deleteFolder(stack.project, stack.name);
-												await serverRevalidateTag("projects");
+												await deleteStack(stack.id);
+												await serverRevalidateTag("stacks");
 											}}
 										>
 											<Trash2Icon className="h-4 w-4 mr-2" />

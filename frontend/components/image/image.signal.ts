@@ -4,8 +4,7 @@ import { signal } from "@preact/signals-react";
 export const isGenerateImageDrawerOpen = signal(false);
 
 type GenerateImageFormValues = {
-	project: string;
-	stack: string;
+	stack: number;
 	frames: number[];
 	weights: number[];
 };

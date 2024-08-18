@@ -4,11 +4,11 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Commander } from "@/components/functional/Commander";
-import { ProgressDialog } from "@/components/functional/ProgressDialog";
 import { GenerateImageFormDialog } from "@/components/image/GenerateImageFormDialog";
 import { CreateProjectFormDialog } from "@/components/project/CreateProjectFormDialog";
 import { CreateStackFormDialog } from "@/components/stack/CreateStackFormDialog";
 import { getAllProjects } from "@/lib/repos/project.repo";
+import { getAvailableStacks } from "@/lib/repos/stack.repo";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -17,12 +17,15 @@ export const metadata: Metadata = {
 	description: "Create beautiful blends of your images with BLIM.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	const projects = await getAllProjects();
+	const allStacks = await getAvailableStacks();
 
 	return (
 		<html lang="en" suppressHydrationWarning>
@@ -46,8 +49,7 @@ export default async function RootLayout({
 					<Commander projects={projects} />
 					<CreateProjectFormDialog />
 					<CreateStackFormDialog projects={projects} />
-					<GenerateImageFormDialog projects={projects} />
-					<ProgressDialog />
+					<GenerateImageFormDialog allStacks={allStacks} />
 				</ThemeProvider>
 			</body>
 		</html>

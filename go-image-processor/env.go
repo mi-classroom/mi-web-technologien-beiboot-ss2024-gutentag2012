@@ -9,6 +9,7 @@ import (
 
 type Env struct {
 	FfmpegPath string
+	FfprobePath string
 
 	MinioURL        string
 	MinioBucketName string
@@ -37,6 +38,7 @@ func configureEnvs() Env {
 
 	return Env{
 		os.Getenv("FFMPEG_BINARY_PATH"),
+		os.Getenv("FFPROBE_BINARY_PATH"),
 		os.Getenv("MINIO_ENDPOINT"),
 		os.Getenv("MINIO_BUCKET_NAME"),
 		os.Getenv("MINIO_ACCESS_KEY"),

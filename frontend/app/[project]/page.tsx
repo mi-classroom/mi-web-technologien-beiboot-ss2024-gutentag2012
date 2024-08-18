@@ -9,25 +9,34 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getPublicApiUrl, getServerApiUrl } from "@/lib/env";
-import { getAllProjects } from "@/lib/repos/project.repo";
-import { getProjectFile } from "@/lib/utils";
+import {getProjectById, type ProjectFull, type ResultImage, type Stack} from "@/lib/repos/project.repo";
+import { getStacksForProject } from "@/lib/repos/stack.repo";
+import { getImagePath } from "@/lib/utils";
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 
 export default async function Project({
 	params,
 }: { params: { project: string } }) {
-	const projects = await getAllProjects();
-	const currentProject = projects.find(
-		(project) => project.name === params.project,
-	);
+	const currentProject = await getProjectById(params.project);
+	const stacks = await getStacksForProject(params.project);
 
 	if (!currentProject) {
 		return <h1>Project not found</h1>;
 	}
+	if (
+		currentProject.processingJob &&
+		currentProject.processingJob.status !== "done"
+	) {
+		return <h1>This project is still being processed</h1>;
+	}
 
-	const videoFile = getProjectFile(currentProject);
-	const allResults = currentProject.stacks.flatMap((stack) => stack.results);
+	const resultImages = currentProject.imageStacks
+		.flatMap((stack) =>
+			stack.resultImages.map((result) => [currentProject, stack, result]),
+		)
+		.sort((a, b) => b[2].id - a[2].id) as unknown as [ProjectFull, Stack, ResultImage][];
 
 	return (
 		<main className="container overflow-y-auto py-2">
@@ -48,21 +57,24 @@ export default async function Project({
 			</Breadcrumb>
 
 			<div className="w-full flex justify-center">
-				{videoFile && (
+				{currentProject.videoFile && (
 					// biome-ignore lint/a11y/useMediaCaption: <explanation>
 					<video
 						id="project-video"
 						className="h-[500px]"
-						src={`/media/file-upload/get/${encodeURIComponent(videoFile)}`}
+						src={getImagePath(
+							currentProject.bucketPrefix,
+							currentProject.videoFile,
+						)}
 						controls
 						preload="auto"
 					/>
 				)}
 			</div>
 
-			<ResultCarousel results={allResults} className="mt-4" />
+			<ResultCarousel results={resultImages} className="mt-4" />
 
-			<StackTable stacks={currentProject.stacks} className="mt-4" />
+			<StackTable stacks={stacks} className="mt-4" />
 		</main>
 	);
 }

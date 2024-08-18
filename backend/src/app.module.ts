@@ -8,14 +8,15 @@ import { APP_PIPE } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ZodValidationPipe } from "nestjs-zod";
 import { AmqpClientModule } from "./amqp-client/amqp-client.module";
+import { DatabaseModule } from "./database/database.module";
 import { envSchema } from "./env/env";
 import { EnvModule } from "./env/env.module";
 import { FileUploadModule } from "./file-upload/file-upload.module";
-import { ImageResultModule } from "./image-result/image-result.module";
+import { JobsModule } from "./jobs/jobs.module";
 import { MinioClientModule } from "./minio-client/minio-client.module";
 import { ProjectsModule } from "./projects/projects.module";
 import { RequestLoggerMiddleware } from "./request-logger.middleware";
-import { VideoProcessorModule } from "./video-processor/video-processor.module";
+import { StackModule } from "./stack/stack.module";
 
 @Module({
 	imports: [
@@ -30,9 +31,10 @@ import { VideoProcessorModule } from "./video-processor/video-processor.module";
 		MinioClientModule,
 		FileUploadModule,
 		AmqpClientModule,
-		VideoProcessorModule,
-		ImageResultModule,
 		ProjectsModule,
+		DatabaseModule,
+		JobsModule,
+		StackModule,
 	],
 	providers: [
 		{

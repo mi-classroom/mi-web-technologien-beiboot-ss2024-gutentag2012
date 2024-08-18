@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { signal, useComputed } from "@preact/signals-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 const loadedImages = signal<string[]>([]);
 const runningLoadingDebounce = new Map<string, number>();

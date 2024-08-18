@@ -78,6 +78,7 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - DB_URL=http://database:8080
 
   frontend:
     container_name: 'frontend'
@@ -103,6 +104,14 @@ services:
       - ./caddyfile.docker:/etc/caddy/Caddyfile
       - ./certs:/etc/caddy/certs
 
+  database:
+    container_name: 'database'
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    ports:
+      - '8080:8080'
+    volumes:
+      - database:/var/lib/sqld
+
 networks:
   default:
     driver: bridge
@@ -110,3 +119,4 @@ networks:
 volumes:
   minio_data:
     driver: local
+  database:

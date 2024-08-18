@@ -4,10 +4,7 @@ import { ErrorText, ErrorTextForm } from "@/components/functional/ErrorText";
 import { FrameBlockers } from "@/components/functional/FrameBlockers";
 import { FrameInputs } from "@/components/functional/FrameInputs";
 import { LazyImage } from "@/components/functional/LazyImage";
-import {
-	progressDialogData,
-	updateProgress,
-} from "@/components/functional/ProgressDialog";
+import { useProgressDialog } from "@/components/functional/ProgressDialog";
 import { WeightPicker } from "@/components/functional/WeightPicker";
 import {
 	generateImageForm,
@@ -38,26 +35,23 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { SliderForm } from "@/components/ui/slider";
-import { listenToProgress } from "@/lib/repos/progress.repo";
-import { type Project, Stack } from "@/lib/repos/project.repo";
-import { createImageFromStack, getFilesInStack } from "@/lib/repos/stack.repo";
+import { listenToJob } from "@/lib/repos/jobs.repo";
+// import { listenToProgress } from "@/lib/repos/progress.repo";
+import type { Stack } from "@/lib/repos/project.repo";
+import { generateImage, getStack } from "@/lib/repos/stack.repo";
 import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
 import { getImagePath } from "@/lib/utils";
 import { useFormWithComponents } from "@formsignals/form-react";
-import {
-	batch,
-	useComputed,
-	useSignal,
-	useSignalEffect,
-} from "@preact/signals-react";
+import { batch, useSignal, useSignalEffect } from "@preact/signals-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 type CreateImageFormDrawerProps = {
-	projects: Project[];
+	allStacks: Stack[];
 };
 
 const indexIncludedInFrames = (index: number) => {
+	if (!generateImageForm.data.value.frames) return false;
 	return generateImageForm.data.value.frames.value.some((frame, i) => {
 		const isStartFrame = i % 2 === 0;
 		if (isStartFrame) {
@@ -70,15 +64,25 @@ const indexIncludedInFrames = (index: number) => {
 };
 
 export function GenerateImageFormDialog({
-	projects,
+	allStacks,
 }: CreateImageFormDrawerProps) {
 	const { project } = useParams();
 
 	const form = useFormWithComponents(generateImageForm);
 	const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-	const [availableImages, setAvailableImages] = useState<
-		Array<{ name: string }>
-	>([]);
+	const [selectedStack, setSelectedStack] = useState<Stack>();
+
+	const progress = useProgressDialog({
+		label: "Image Generation",
+		description:
+			"Currently generating image from frames. Be aware that this might take a while depending on the input.",
+		messages: [
+			"Downloading files from server...",
+			"Merging images into long term exposure...",
+			"Uploading file to server...",
+		],
+		pendingMessage: "Connecting to server and generating image...",
+	});
 
 	const focussedImage = useSignal(0);
 	useSignalEffect(() => {
@@ -95,74 +99,45 @@ export function GenerateImageFormDialog({
 		});
 	}, [carouselApi, focussedImage]);
 
-	const selectedProject = useComputed(() => {
-		const selection = form.data.value.project?.value;
-		if (!selection) return;
-		return projects.find((p) => p.name === selection);
-	});
-
 	useSignalEffect(() => {
-		const project = form.data.value.project?.value;
 		const stack = form.data.value.stack?.value;
-		if (!project || !stack) return;
+		if (!stack) return;
 
-		getFilesInStack(project, stack).then(setAvailableImages);
-	});
+		getStack(stack).then((foundStack) => {
+			form.updateOptions({
+				defaultValues: {
+					project,
+					frames: [1, foundStack.frameCount],
+					weights: Array.from({ length: foundStack.frameCount }, () => 1),
+				} as never,
+				onSubmit: async (values) => {
+					progress.isOpen.value = true;
+					progress.data.value = {
+						status: "queued",
+						stepTimestamps: [],
+					};
 
-	useEffect(() => {
-		form.updateOptions({
-			defaultValues: {
-				project,
-				frames: [1, availableImages.length],
-				weights: Array.from({ length: availableImages.length }, () => 1),
-			} as never,
-			onSubmit: async (values) => {
-				progressDialogData.value = {
-					CurrentStep: 0,
-					MaxSteps: 0,
-					Message: "Waiting for server...",
-					options: {
-						label: "Image Generating",
-						description:
-							"Currently processing the given frames to generate a long term exposure image. Be aware that this might take a while depending on the input.",
-					},
-				};
+					const resultImage = await generateImage(values);
 
-				return new Promise((r) => {
-					const identifier = `${values.project}-${values.stack}-${values.frames.join("-")}`;
-					listenToProgress("generate-image", identifier, (data) => {
-						updateProgress(data);
-						if (data.CurrentStep !== data.MaxSteps) return;
-						serverRevalidateTag("projects");
-						r(undefined);
-					}).then(async () => {
-						isGenerateImageDrawerOpen.value = false;
-						await createImageFromStack(values);
-						await form.reset();
+					return new Promise((r) => {
+						listenToJob(resultImage.processingJobId, (data) => {
+							progress.data.value = data;
+
+							if (data.status !== "done") return;
+
+							serverRevalidateTag("projects");
+							r(undefined);
+						}).then(async () => {
+							isGenerateImageDrawerOpen.value = false;
+							await form.reset();
+						});
 					});
-				});
-			},
-			validator: (values) => {
-				if (!values.project || !values.stack) return undefined;
-				const selectedProject = projects.find((p) => p.name === values.project);
-				if (!selectedProject) return undefined;
+				},
+			});
 
-				const selectedStack = selectedProject.stacks.find(
-					(s) => s.name === values.stack,
-				);
-				if (!selectedStack) return undefined;
-
-				if (
-					selectedStack.results.some((result) =>
-						result.frames.every((f, i) => f === values.frames[i]),
-					)
-				)
-					return "This image is already generated";
-
-				return undefined;
-			},
+			setSelectedStack(foundStack);
 		});
-	}, [availableImages, form, projects, project]);
+	});
 
 	const onSliderChange = useCallback(
 		(values: number[]) => {
@@ -178,12 +153,13 @@ export function GenerateImageFormDialog({
 
 	return (
 		<>
+			<progress.ProgressDialog />
 			<DialogSignal
 				open={isGenerateImageDrawerOpen}
 				onOpenChange={(newOpen) => {
 					isGenerateImageDrawerOpen.value = newOpen;
 					if (!newOpen) {
-						setAvailableImages([]);
+						setSelectedStack(undefined);
 						generateImageForm.reset();
 					}
 				}}
@@ -207,38 +183,24 @@ export function GenerateImageFormDialog({
 								void generateImageForm.handleSubmit();
 							}}
 						>
-							<form.FieldProvider name="project">
-								<Label>Project</Label>
+							<form.FieldProvider name="stack">
+								<Label>Stack</Label>
 								<SelectForm>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{projects.map((project) => (
-											<SelectItem key={project.name} value={project.name}>
-												{project.name}
+										{allStacks.map((stack) => (
+											<SelectItem key={stack.name} value={`${stack.id}`}>
+												{stack.name}{" "}
+												<small className="text-xs text-muted-foreground">
+													{stack.project}
+												</small>
 											</SelectItem>
 										))}
 									</SelectContent>
 								</SelectForm>
 							</form.FieldProvider>
-							{selectedProject.value && (
-								<form.FieldProvider name="stack">
-									<Label>Stack</Label>
-									<SelectForm>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{selectedProject.value.stacks.map((stack) => (
-												<SelectItem key={stack.name} value={stack.name}>
-													{stack.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</SelectForm>
-								</form.FieldProvider>
-							)}
 
 							<Carousel
 								setApi={setCarouselApi}
@@ -246,7 +208,7 @@ export function GenerateImageFormDialog({
 								className="mx-4 mt-4"
 							>
 								<CarouselContent>
-									{availableImages.map(({ name }, i) => (
+									{selectedStack?.files.map((name, i) => (
 										<CarouselItem
 											key={name}
 											className="relative basis-1/1 w-1/5"
@@ -289,7 +251,7 @@ export function GenerateImageFormDialog({
 														if (
 															isNotIncludedButNotEdge === -1 &&
 															frames[frames.length - 1] < i &&
-															i + 2 < availableImages.length
+															i + 2 < selectedStack.frameCount
 														) {
 															isNotIncludedButNotEdge = frames.length;
 														}
@@ -414,47 +376,49 @@ export function GenerateImageFormDialog({
 								</CarouselContent>
 							</Carousel>
 
-							<form.FieldProvider
-								name="frames"
-								validator={(values) => {
-									if (values.length % 2 !== 0) {
-										return "Frames must be in pairs";
-									}
-									return (
-										values.some((v, i, arr) => i !== 0 && v < arr[i - 1]) &&
-										"Frames must be in ascending order"
-									);
-								}}
-								validateOnNestedChange
-							>
-								<WeightPicker
-									focussedImage={focussedImage}
-									maxWeight={Math.round(availableImages.length / 3)}
-								/>
-								<SliderForm
-									min={1}
-									max={availableImages.length}
-									step={1}
-									onValueChange={onSliderChange}
+							{selectedStack && (
+								<form.FieldProvider
+									name="frames"
+									validator={(values) => {
+										if (values.length % 2 !== 0) {
+											return "Frames must be in pairs";
+										}
+										return (
+											values.some((v, i, arr) => i !== 0 && v < arr[i - 1]) &&
+											"Frames must be in ascending order"
+										);
+									}}
+									validateOnNestedChange
 								>
-									{availableImages.length && (
-										<FrameBlockers max={availableImages.length} min={1} />
-									)}
-								</SliderForm>
+									<WeightPicker
+										focussedImage={focussedImage}
+										maxWeight={Math.round(selectedStack.frameCount / 3)}
+									/>
+									<SliderForm
+										min={1}
+										max={selectedStack.frameCount}
+										step={1}
+										onValueChange={onSliderChange}
+									>
+										{selectedStack.frameCount && (
+											<FrameBlockers max={selectedStack.frameCount} min={1} />
+										)}
+									</SliderForm>
 
-								<Label className="mt-4 mb-2 inline-block">
-									Frames to include
-								</Label>
-								<div className="flex flex-col gap-2 max-h-48 overflow-y-auto p-1">
-									{carouselApi && (
-										<FrameInputs
-											focussedImage={focussedImage}
-											max={availableImages.length}
-										/>
-									)}
-								</div>
-								<ErrorText />
-							</form.FieldProvider>
+									<Label className="mt-4 mb-2 inline-block">
+										Frames to include
+									</Label>
+									<div className="flex flex-col gap-2 max-h-48 overflow-y-auto p-1">
+										{carouselApi && (
+											<FrameInputs
+												focussedImage={focussedImage}
+												max={selectedStack.frameCount}
+											/>
+										)}
+									</div>
+									<ErrorText />
+								</form.FieldProvider>
+							)}
 
 							<ErrorTextForm />
 

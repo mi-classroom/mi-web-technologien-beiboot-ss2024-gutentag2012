@@ -1,9 +1,7 @@
 "use client";
-
-import { isCreateProjectDrawerOpen } from "@/components/project/project.signals";
 import { isCreateStackDrawerOpen } from "@/components/stack/stack.signal";
 import { Button } from "@/components/ui/button";
-import { ImagePlusIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 
 export function CreateStackButton() {
 	return (

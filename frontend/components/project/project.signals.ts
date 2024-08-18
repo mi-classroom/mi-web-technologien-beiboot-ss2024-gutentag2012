@@ -1,5 +1,5 @@
 import { FormLogic } from "@formsignals/form-react";
-import { effect, signal } from "@preact/signals-react";
+import { signal } from "@preact/signals-react";
 
 export const isCreateProjectDrawerOpen = signal(false);
 
