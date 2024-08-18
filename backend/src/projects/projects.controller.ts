@@ -26,7 +26,6 @@ export class ProjectsController {
 	) {}
 	@Get("/")
 	async getAllProjects() {
-		console.log("Listing projects")
 		return this.projectsService.getAllProjects();
 	}
 
