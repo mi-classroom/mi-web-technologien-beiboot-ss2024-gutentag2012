@@ -22,19 +22,10 @@ export async function ProjectListItem({ project }: ProjectPreviewCardProps) {
 	const isProcessing =
 		project.processingJob?.status === "processing" ||
 		project.processingJob?.status === "queued";
-	// TODO Get live data
 
 	const stackCount = project.totalStackCount;
 	const resultCount = project.totalResultCount;
 	const countString = `${stackCount} stack${stackCount !== 1 ? "s" : ""}, ${resultCount} result${resultCount !== 1 ? "s" : ""}`;
-
-	const totalTime = project.processingJob?.stepTimestamps.reduce(
-		(acc, curr, i) => {
-			if (i === 0) return acc;
-			return acc + curr - project.processingJob.stepTimestamps[i - 1];
-		},
-		0,
-	);
 
 	return (
 		<ContextMenu>
@@ -54,8 +45,7 @@ export async function ProjectListItem({ project }: ProjectPreviewCardProps) {
 						/>
 					) : (
 						<div className="w-full h-48 flex flex-col items-center justify-center text-xs text-muted-foreground gap-2">
-							<LoaderCircleIcon className="animate-spin h-8 w-8 mx-auto" />
-							<p>{totalTime} ms</p>
+							<LoaderCircleIcon className="animate-spin h-12 w-12 mx-auto" />
 						</div>
 					)}
 					<div className="px-4 py-2">
