@@ -59,19 +59,29 @@ export function CreateProjectFormDialog() {
 				projectFile: null as File | null,
 				prefix: "",
 			},
-			validator: (values) =>
-				!values.projectFile ? "Please upload a file" : undefined,
-			onSubmit: async (values) => {
+			onSubmit: async (values, addErrors) => {
 				progress.isOpen.value = true;
 				progress.data.value = {
 					status: "queued",
 					stepTimestamps: [],
 				};
 
-				const createdProject = await projectCreator.createProject([
-					["name", values.prefix],
-					["isPublic", false],
-				]);
+				const createdProject = await projectCreator
+					.createProject([
+						["name", values.prefix],
+						["isPublic", false],
+					])
+					.catch((err) => {
+						progress.isOpen.value = false;
+						if (!("message" in err) || typeof err.message !== "string") {
+							return;
+						}
+						addErrors({
+							projectFile: err.message,
+						});
+					});
+
+				if (!createdProject) return;
 
 				return new Promise((r) => {
 					listenToJob(createdProject.processingJobId, (data) => {
@@ -81,9 +91,9 @@ export function CreateProjectFormDialog() {
 
 						serverRevalidateTag("projects");
 						r(undefined);
-					}).then(async () => {
+					}).then(() => {
 						isCreateProjectDrawerOpen.value = false;
-						await form.reset();
+						form.reset();
 					});
 				});
 			},
@@ -140,16 +150,29 @@ export function CreateProjectFormDialog() {
 								</div>
 							</form.FieldProvider>
 
-							<div>
-								<Label className="mb-2 inline-block">Project Video File</Label>
-								<FileUploadField
-									className="rounded"
-									file={createProjectForm.data.peek().projectFile}
-									shouldPreview
-									title="Upload a video file"
-									description="Click to select or drag video file here"
-								/>
-							</div>
+							<form.FieldProvider
+								name="projectFile"
+								validator={(file) => {
+									if (!file) return "Please upload a file";
+									if (file.size > Number(process.env.NEXT_PUBLIC_MAX_FILE_SIZE))
+										return "File is too large";
+									return undefined;
+								}}
+							>
+								<div>
+									<Label className="mb-2 inline-block">
+										Project Video File
+									</Label>
+									<FileUploadField
+										className="rounded"
+										file={createProjectForm.data.peek().projectFile}
+										shouldPreview
+										title="Upload a video file"
+										description="Click to select or drag video file here"
+									/>
+									<ErrorText />
+								</div>
+							</form.FieldProvider>
 						</div>
 
 						<DialogFooter className="mt-4">
