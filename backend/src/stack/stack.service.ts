@@ -24,6 +24,7 @@ export class StackService {
 			.select({
 				id: schema.ImageStacks.id,
 				bucketPrefix: schema.ImageStacks.bucketPrefix,
+				projectBucketPrefix: schema.Projects.bucketPrefix,
 				name: schema.ImageStacks.name,
 				fromTimestamp: schema.ImageStacks.fromTimestamp,
 				toTimestamp: schema.ImageStacks.toTimestamp,
@@ -33,11 +34,19 @@ export class StackService {
 			})
 			.from(schema.ImageStacks)
 			.leftJoin(
+				schema.Projects,
+				eq(schema.ImageStacks.projectId, schema.Projects.id),
+			)
+			.leftJoin(
 				schema.ResultImages,
 				eq(schema.ImageStacks.id, schema.ResultImages.imageStackId),
 			)
 			.groupBy(schema.ImageStacks.id)
-			.where(eq(schema.ImageStacks.projectId, projectId));
+			.where(eq(schema.ImageStacks.projectId, projectId))
+			.then(res => Promise.all(res.map(async stack => ({
+				...stack,
+				memoryUsage: await this.minioClientService.getCompleteMemoryUsageInGB(stack.projectBucketPrefix! + "/" + stack.bucketPrefix!),
+			}))));
 	}
 
 	async getAvailableStacks() {
