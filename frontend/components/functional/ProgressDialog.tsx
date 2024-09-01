@@ -19,12 +19,17 @@ import {
 } from "../ui/alert-dialog";
 import { Progress } from "../ui/progress";
 
-type ProcessingJob = {
-	status: "queued" | "processing" | "done" | "error";
-	totalSteps: number;
-	currentStep: number;
-	stepTimestamps: number[];
-};
+ type ProcessingJob =
+	| {
+			status: "queued";
+			stepTimestamps: number[];
+	  }
+	| {
+			status: "processing" | "done" | "error";
+			totalSteps: number;
+			currentStep: number;
+			stepTimestamps: number[];
+	  };
 
 type ProgressDialogProps = {
 	label: string;
