@@ -10,6 +10,7 @@ export type Project = {
 	isPublic: boolean;
 	videoFile: string;
 
+	memoryUsage: number;
 	maxWidth?: number;
 	maxHeight?: number;
 	maxFrameRate?: number;
@@ -56,6 +57,8 @@ export type Stack = {
 	bucketPrefix: string;
 	processingJobId: number;
 	name: string;
+	from: string;
+	to: string;
 	project: string;
 	files: string[];
 	frameCount: number;
@@ -63,6 +66,7 @@ export type Stack = {
 	toTimestamp: string;
 	frameRate: number;
 	scale: number;
+	memoryUsage: number;
 	totalResultCount: number;
 };
 
@@ -72,6 +76,7 @@ export type ResultImage = {
 	project: string;
 	stack: string;
 	frames: number[];
+	weights: number[];
 	lastModified?: number;
 };
 
