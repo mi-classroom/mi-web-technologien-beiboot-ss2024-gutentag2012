@@ -55,6 +55,9 @@ export type Stack = {
 	id: number;
 	bucketPrefix: string;
 	name: string;
+	project: string;
+	files: string[];
+	frameCount: number;
 	fromTimestamp: string;
 	toTimestamp: string;
 	frameRate: number;
@@ -131,7 +134,7 @@ export async function createProject(
 					state: "error",
 					error: `Failed to upload file: "${response?.message ?? response}"`,
 				};
-				return;
+				return reject(response);
 			}
 
 			status.value = {
