@@ -94,7 +94,7 @@ export class StackService {
 		const files = await this.minioClientService
 			.listFiles(`${stack.project.bucketPrefix}/${stack.bucketPrefix}`, true)
 			.then((res) =>
-				res.filter((file) => !file.prefix).map((file) => file.name),
+				res.filter((file) => !file.prefix && !file.name?.includes("/outputs/")).map((file) => file.name),
 			);
 
 		return {
