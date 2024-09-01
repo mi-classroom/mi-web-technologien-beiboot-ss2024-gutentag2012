@@ -155,7 +155,6 @@ export async function createProject(
 			});
 		});
 		xhr.addEventListener("progress", (e) => {
-			console.log("progress", e.loaded, e.total);
 			status.value = {
 				state: "progress",
 				progress: e.loaded / e.total,
