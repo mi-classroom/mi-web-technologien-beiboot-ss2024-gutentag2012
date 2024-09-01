@@ -1,3 +1,5 @@
+import { DeleteProjectDialog } from "@/components/project/DeleteProjectDialog";
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -7,13 +9,9 @@ import {
 } from "@/components/ui/context-menu";
 import type { Project } from "@/lib/repos/project.repo";
 import { getImagePath } from "@/lib/utils";
-import {ExternalLinkIcon, LoaderCircleIcon, Trash2Icon} from "lucide-react";
+import { ExternalLinkIcon, LoaderCircleIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-	AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
-import {DeleteProjectDialog} from "@/components/project/DeleteProjectDialog";
 
 type ProjectPreviewCardProps = {
 	project: Project;
@@ -68,10 +66,8 @@ export async function ProjectListItem({ project }: ProjectPreviewCardProps) {
 					</Link>
 					<ContextMenuSeparator />
 					<AlertDialogTrigger asChild>
-						<ContextMenuItem
-							className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
-						>
-							<Trash2Icon className="h-4 w-4 mr-2"/>
+						<ContextMenuItem className="group bg-destructive text-destructive-foreground focus:bg-destructive/40">
+							<Trash2Icon className="h-4 w-4 mr-2" />
 							Delete
 						</ContextMenuItem>
 					</AlertDialogTrigger>

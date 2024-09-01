@@ -8,6 +8,7 @@ import { GenerateImageFormDialog } from "@/components/image/GenerateImageFormDia
 import { CreateProjectFormDialog } from "@/components/project/CreateProjectFormDialog";
 import { CreateStackFormDialog } from "@/components/stack/CreateStackFormDialog";
 import { Progress } from "@/components/ui/progress";
+import { Toaster } from "@/components/ui/sonner";
 import {
 	Tooltip,
 	TooltipContent,
@@ -18,7 +19,6 @@ import { getMemoryUsage } from "@/lib/repos/jobs.repo";
 import { getAllProjects } from "@/lib/repos/project.repo";
 import { getAvailableStacks } from "@/lib/repos/stack.repo";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
-import {Toaster} from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 

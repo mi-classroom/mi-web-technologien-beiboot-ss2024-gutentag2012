@@ -134,7 +134,7 @@ export class MinioClientService {
 		return currentMemoryUsage >= memoryLimit;
 	}
 
-	public async getCompleteMemoryUsageInGB(project="") {
+	public async getCompleteMemoryUsageInGB(project = "") {
 		const bucketStream = this.minio.client.listObjectsV2(
 			this.minioBucket,
 			project,

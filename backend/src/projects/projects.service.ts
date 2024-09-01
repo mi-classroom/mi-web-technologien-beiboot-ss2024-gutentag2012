@@ -59,11 +59,16 @@ export class ProjectsService {
 			)
 			.groupBy(schema.Projects.id)
 			.then((res) =>
-				Promise.all(res.map(async (project) => ({
-					...project,
-					memoryUsage: await this.minioClientService.getCompleteMemoryUsageInGB(project.bucketPrefix),
-					imageStackNames: project.imageStackNames?.split(","),
-				})),)
+				Promise.all(
+					res.map(async (project) => ({
+						...project,
+						memoryUsage:
+							await this.minioClientService.getCompleteMemoryUsageInGB(
+								project.bucketPrefix,
+							),
+						imageStackNames: project.imageStackNames?.split(","),
+					})),
+				),
 			);
 	}
 

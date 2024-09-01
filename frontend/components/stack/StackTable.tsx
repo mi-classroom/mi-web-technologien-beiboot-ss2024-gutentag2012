@@ -5,6 +5,8 @@ import {
 	isGenerateImageDrawerOpen,
 } from "@/components/image/image.signal";
 import { CreateStackButton } from "@/components/stack/CreateStackButton";
+import { DeleteStackDialog } from "@/components/stack/DeleteStackDialog";
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -38,8 +40,6 @@ import {
 } from "@/components/ui/table";
 import type { Stack } from "@/lib/repos/project.repo";
 import { EllipsisVerticalIcon, ImagePlusIcon, Trash2Icon } from "lucide-react";
-import {DeleteStackDialog} from "@/components/stack/DeleteStackDialog";
-import {AlertDialogTrigger} from "@/components/ui/alert-dialog";
 
 type StackTableProps = {
 	stacks: Stack[];
@@ -85,8 +85,8 @@ export function StackTable({ stacks, className }: StackTableProps) {
 								</TableRow>
 							)}
 							{stacks.map((stack) => (
-								<DeleteStackDialog stack={stack}>
-									<ContextMenu key={stack.name}>
+								<DeleteStackDialog stack={stack} key={stack.name}>
+									<ContextMenu>
 										<ContextMenuTrigger asChild>
 											<TableRow onDoubleClick={generateForStack(stack)}>
 												<TableCell>{stack.name}</TableCell>
@@ -104,16 +104,16 @@ export function StackTable({ stacks, className }: StackTableProps) {
 															</Button>
 														</DropdownMenuTrigger>
 														<DropdownMenuContent>
-															<DropdownMenuItem onClick={generateForStack(stack)}>
+															<DropdownMenuItem
+																onClick={generateForStack(stack)}
+															>
 																<ImagePlusIcon className="h-4 w-4 mr-2" />
 																Generate Image
 															</DropdownMenuItem>
 															<DropdownMenuSeparator />
 															<AlertDialogTrigger asChild>
-																<ContextMenuItem
-																	className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
-																>
-																	<Trash2Icon className="h-4 w-4 mr-2"/>
+																<ContextMenuItem className="group bg-destructive text-destructive-foreground focus:bg-destructive/40">
+																	<Trash2Icon className="h-4 w-4 mr-2" />
 																	Delete
 																</ContextMenuItem>
 															</AlertDialogTrigger>
@@ -129,10 +129,8 @@ export function StackTable({ stacks, className }: StackTableProps) {
 											</ContextMenuItem>
 											<ContextMenuSeparator />
 											<AlertDialogTrigger asChild>
-												<ContextMenuItem
-													className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
-												>
-													<Trash2Icon className="h-4 w-4 mr-2"/>
+												<ContextMenuItem className="group bg-destructive text-destructive-foreground focus:bg-destructive/40">
+													<Trash2Icon className="h-4 w-4 mr-2" />
 													Delete
 												</ContextMenuItem>
 											</AlertDialogTrigger>

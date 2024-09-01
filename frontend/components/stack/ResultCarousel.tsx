@@ -1,10 +1,11 @@
 "use client";
 
+import { DeleteImageDialog } from "@/components/image/DeleteImageDialog";
 import {
 	generateImageForm,
 	isGenerateImageDrawerOpen,
 } from "@/components/image/image.signal";
-import { DeleteImageContextMenuItem } from "@/components/stack/DeleteImageContextMenuItem";
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -31,11 +32,14 @@ import {
 import type { ProjectFull, ResultImage, Stack } from "@/lib/repos/project.repo";
 import { getImagePath } from "@/lib/utils";
 import { batch } from "@preact/signals-react";
-import {ExternalLinkIcon, ImagePlusIcon, PencilLineIcon, Trash2Icon} from "lucide-react";
+import {
+	ExternalLinkIcon,
+	ImagePlusIcon,
+	PencilLineIcon,
+	Trash2Icon,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {AlertDialogTrigger} from "@/components/ui/alert-dialog";
-import {DeleteImageDialog} from "@/components/image/DeleteImageDialog";
 
 type ResultCarouselProps = {
 	results: [ProjectFull, Stack, ResultImage][];
@@ -131,10 +135,8 @@ export function ResultCarousel({ results, className }: ResultCarouselProps) {
 												</ContextMenuItem>
 												<ContextMenuSeparator />
 												<AlertDialogTrigger asChild>
-													<ContextMenuItem
-														className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
-													>
-														<Trash2Icon className="h-4 w-4 mr-2"/>
+													<ContextMenuItem className="group bg-destructive text-destructive-foreground focus:bg-destructive/40">
+														<Trash2Icon className="h-4 w-4 mr-2" />
 														Delete
 													</ContextMenuItem>
 												</AlertDialogTrigger>

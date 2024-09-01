@@ -43,10 +43,17 @@ export class StackService {
 			)
 			.groupBy(schema.ImageStacks.id)
 			.where(eq(schema.ImageStacks.projectId, projectId))
-			.then(res => Promise.all(res.map(async stack => ({
-				...stack,
-				memoryUsage: await this.minioClientService.getCompleteMemoryUsageInGB(stack.projectBucketPrefix! + "/" + stack.bucketPrefix!),
-			}))));
+			.then((res) =>
+				Promise.all(
+					res.map(async (stack) => ({
+						...stack,
+						memoryUsage:
+							await this.minioClientService.getCompleteMemoryUsageInGB(
+								`${stack.projectBucketPrefix}/${stack.bucketPrefix}`,
+							),
+					})),
+				),
+			);
 	}
 
 	async getAvailableStacks() {
