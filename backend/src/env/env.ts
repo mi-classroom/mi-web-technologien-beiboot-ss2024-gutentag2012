@@ -10,6 +10,7 @@ export const envSchema = z.object({
 	RABBITMQ_URL: z.string().min(1),
 	DB_URL: z.string().min(1),
 	MAX_STORAGE_GB: z.coerce.number().min(0.1),
+	MAX_FILE_SIZE: z.coerce.number().min(0.1),
 });
 
 export type Env = z.infer<typeof envSchema>;
