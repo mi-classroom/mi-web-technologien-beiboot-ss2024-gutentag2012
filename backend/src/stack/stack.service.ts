@@ -65,8 +65,8 @@ export class StackService {
 				project: schema.Projects.name,
 				projectPrefix: schema.Projects.bucketPrefix,
 				stackPrefix: schema.ImageStacks.bucketPrefix,
-				fromTimestamp: schema.ImageStacks.fromTimestamp,
-				toTimestamp: schema.ImageStacks.toTimestamp,
+				from: schema.ImageStacks.fromTimestamp,
+				to: schema.ImageStacks.toTimestamp,
 				frameRate: schema.ImageStacks.frameRate,
 				duration: schema.Projects.duration,
 			})

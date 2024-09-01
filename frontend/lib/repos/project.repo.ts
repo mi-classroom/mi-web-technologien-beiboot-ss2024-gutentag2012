@@ -38,8 +38,8 @@ export type ProjectFull = Omit<
 		id: number;
 		bucketPrefix: string;
 		name: string;
-		fromTimestamp: string;
-		toTimestamp: string;
+		from: string;
+		to: string;
 		frameRate: number;
 		scale: number;
 		resultImages: Array<{
@@ -62,8 +62,6 @@ export type Stack = {
 	project: string;
 	files: string[];
 	frameCount: number;
-	fromTimestamp: string;
-	toTimestamp: string;
 	frameRate: number;
 	scale: number;
 	memoryUsage: number;
