@@ -26,7 +26,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { listenToJob } from "@/lib/repos/jobs.repo";
-// import { listenToProgress } from "@/lib/repos/progress.repo";
 import type { Project } from "@/lib/repos/project.repo";
 import { createStack } from "@/lib/repos/stack.repo";
 import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
@@ -64,7 +63,7 @@ export function CreateStackFormDialog({
 	});
 
 	useEffect(() => {
-		if (!project) return;
+		if (!project || form.data.peek().projectId?.peek() === +project) return;
 		form.updateOptions({
 			validatorAdapter: ZodAdapter,
 			defaultValues: {
@@ -126,6 +125,7 @@ export function CreateStackFormDialog({
 				});
 			},
 		});
+		form.reset()
 	}, [form, project, progress, selectedProject]);
 
 	return (
