@@ -9,7 +9,12 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {getProjectById, type ProjectFull, type ResultImage, type Stack} from "@/lib/repos/project.repo";
+import {
+	type ProjectFull,
+	type ResultImage,
+	type Stack,
+	getProjectById,
+} from "@/lib/repos/project.repo";
 import { getStacksForProject } from "@/lib/repos/stack.repo";
 import { getImagePath } from "@/lib/utils";
 import Link from "next/link";
@@ -36,7 +41,11 @@ export default async function Project({
 		.flatMap((stack) =>
 			stack.resultImages.map((result) => [currentProject, stack, result]),
 		)
-		.sort((a, b) => b[2].id - a[2].id) as unknown as [ProjectFull, Stack, ResultImage][];
+		.sort((a, b) => b[2].id - a[2].id) as unknown as [
+		ProjectFull,
+		Stack,
+		ResultImage,
+	][];
 
 	return (
 		<main className="container overflow-y-auto py-2">

@@ -42,7 +42,7 @@ export type ProjectFull = Omit<
 		frameRate: number;
 		scale: number;
 		resultImages: Array<{
-			id: number
+			id: number;
 			filename: string;
 			frames: number[];
 			weights: number[];
@@ -63,7 +63,7 @@ export type Stack = {
 };
 
 export type ResultImage = {
-	id: number
+	id: number;
 	filename: string;
 	project: string;
 	stack: string;

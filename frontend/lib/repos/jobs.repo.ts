@@ -25,6 +25,11 @@ export function listenToJob(
 	});
 }
 
-export function getMemoryUsage(): Promise<{totalUsage: number; maxUsage: number}> {
-	return fetch(`${getServerApiUrl()}/projects/total-memory`).then((res) => res.json());
+export function getMemoryUsage(): Promise<{
+	totalUsage: number;
+	maxUsage: number;
+}> {
+	return fetch(`${getServerApiUrl()}/projects/total-memory`).then((res) =>
+		res.json(),
+	);
 }

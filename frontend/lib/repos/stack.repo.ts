@@ -34,7 +34,7 @@ export async function deleteImage(imageId: number) {
 	});
 }
 
-export async function getStacksForProject(projectId: number|string) {
+export async function getStacksForProject(projectId: number | string) {
 	return fetch(`${getServerApiUrl()}/projects/${projectId}/stacks`, {
 		next: { tags: ["stacks", projectId] },
 	}).then((res) => res.json());
@@ -43,7 +43,9 @@ export async function getStacksForProject(projectId: number|string) {
 export async function getAvailableStacks() {
 	return fetch(`${getServerApiUrl()}/stack/available`, {
 		next: { tags: ["stacks", "projects"] },
-	}).then((res) => res.json()).catch(() => false);
+	})
+		.then((res) => res.json())
+		.catch(() => false);
 }
 
 export async function getStack(stackId: number) {

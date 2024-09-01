@@ -129,7 +129,7 @@ export class MinioClientService {
 	}
 
 	public async isMemoryLimitReached() {
-		const memoryLimit = this.envService.get("MAX_STORAGE_GB")
+		const memoryLimit = this.envService.get("MAX_STORAGE_GB");
 		const currentMemoryUsage = await this.getCompleteMemoryUsageInGB();
 		return currentMemoryUsage >= memoryLimit;
 	}

@@ -156,8 +156,8 @@ export function CreateStackFormDialog({
 									name="name"
 									validator={(value) => {
 										if (!value) return "Please provide a stack name";
-										const stackNames = selectedProject.peek().imageStackNames
-										if (stackNames && stackNames.includes(value))
+										const stackNames = selectedProject.peek().imageStackNames;
+										if (stackNames?.includes(value))
 											return "A stack with this name already exists";
 										return undefined;
 									}}

@@ -24,7 +24,7 @@ type ProcessingJob = {
 	totalSteps: number;
 	currentStep: number;
 	stepTimestamps: number[];
-}
+};
 
 type ProgressDialogProps = {
 	label: string;

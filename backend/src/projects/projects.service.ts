@@ -1,21 +1,16 @@
-import {
-	HttpException,
-	HttpStatus,
-	Inject,
-	Injectable,
-} from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { eq, sql } from "drizzle-orm";
 import { LibSQLDatabase } from "drizzle-orm/libsql";
 import { AmqpClientService } from "../amqp-client/amqp-client.service";
 import { DATABASE } from "../database/database.provider";
 import * as schema from "../database/schema";
+import { EnvService } from "../env/env.service";
 import {
 	MinioClientService,
 	UnsupportedMimeType,
 } from "../minio-client/minio-client.service";
 import { CreateProjectDto } from "./dto/CreateProject.dto";
 import { UpdateMetaDto } from "./dto/UpdateMeta.dto";
-import {EnvService} from "../env/env.service";
 
 @Injectable()
 export class ProjectsService {
@@ -135,8 +130,11 @@ export class ProjectsService {
 		file: Express.Multer.File,
 		createProject: CreateProjectDto,
 	) {
-		if(await this.minioClientService.isMemoryLimitReached()) {
-			throw new HttpException("Memory limit reached", HttpStatus.INTERNAL_SERVER_ERROR);
+		if (await this.minioClientService.isMemoryLimitReached()) {
+			throw new HttpException(
+				"Memory limit reached",
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const [processingJob] = await this.db
@@ -185,11 +183,12 @@ export class ProjectsService {
 	}
 
 	async getTotalMemory() {
-		const totalUsage = await this.minioClientService.getCompleteMemoryUsageInGB()
-		const maxUsage = this.envService.get("MAX_STORAGE_GB")
+		const totalUsage =
+			await this.minioClientService.getCompleteMemoryUsageInGB();
+		const maxUsage = this.envService.get("MAX_STORAGE_GB");
 		return {
 			totalUsage,
-			maxUsage
-		}
+			maxUsage,
+		};
 	}
 }
