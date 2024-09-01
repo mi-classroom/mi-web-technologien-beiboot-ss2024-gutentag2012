@@ -24,6 +24,12 @@ export class ProjectsController {
 		private readonly projectsService: ProjectsService,
 		private readonly stacksService: StackService,
 	) {}
+
+	@Get("total-memory")
+	async getTotalMemory() {
+		return this.projectsService.getTotalMemory();
+	}
+
 	@Get("/")
 	async getAllProjects() {
 		return this.projectsService.getAllProjects();

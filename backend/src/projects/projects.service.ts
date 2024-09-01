@@ -3,31 +3,26 @@ import {
 	HttpStatus,
 	Inject,
 	Injectable,
-	NotImplementedException,
 } from "@nestjs/common";
 import { eq, sql } from "drizzle-orm";
 import { LibSQLDatabase } from "drizzle-orm/libsql";
 import { AmqpClientService } from "../amqp-client/amqp-client.service";
 import { DATABASE } from "../database/database.provider";
 import * as schema from "../database/schema";
-import { isJobProcessing } from "../jobs/jobs.utils";
 import {
 	MinioClientService,
 	UnsupportedMimeType,
 } from "../minio-client/minio-client.service";
-import { onlyFulfilledPromises } from "../promise.utils";
 import { CreateProjectDto } from "./dto/CreateProject.dto";
 import { UpdateMetaDto } from "./dto/UpdateMeta.dto";
-import {
-	getResultImageFromName,
-	getStackFromStackName,
-} from "./projects.utils";
+import {EnvService} from "../env/env.service";
 
 @Injectable()
 export class ProjectsService {
 	constructor(
 		private readonly minioClientService: MinioClientService,
 		private readonly amqpClientService: AmqpClientService,
+		private readonly envService: EnvService,
 		@Inject(DATABASE) private readonly db: LibSQLDatabase<typeof schema>,
 	) {}
 
@@ -115,12 +110,6 @@ export class ProjectsService {
 		if (!project) {
 			throw new HttpException("Project not found", HttpStatus.NOT_FOUND);
 		}
-		// if (project.processingJob && isJobProcessing(project.processingJob)) {
-		// 	throw new HttpException(
-		// 		"Cannot delete project while processing",
-		// 		HttpStatus.BAD_REQUEST,
-		// 	);
-		// }
 
 		await this.minioClientService.deleteFolder(project.bucketPrefix);
 		await this.db
@@ -195,67 +184,12 @@ export class ProjectsService {
 		return project;
 	}
 
-	public async getAllProjectss() {
-		const rootFiles = await this.minioClientService.listFiles("root");
-
-		const projectPromises = rootFiles
-			.filter((file) => file.prefix)
-			.map(async (projectFile) => {
-				if (!projectFile.prefix) return null;
-				const projectName = projectFile.prefix.replace(/\/$/, "");
-				const [stacks, otherFiles] =
-					await this.getStacksForProject(projectName);
-
-				return {
-					name: projectName,
-					stacks,
-					otherFiles,
-				};
-			});
-
-		return onlyFulfilledPromises(projectPromises);
-	}
-
-	public async getStacksForProject(projectName: string) {
-		const projectEntries = await this.minioClientService.listFiles(
-			`${projectName}/`,
-			false,
-		);
-
-		const stackPromises = projectEntries
-			.filter((projectEntry) => projectEntry.prefix)
-			// biome-ignore lint/style/noNonNullAssertion: <explanation>
-			.map((projectEntry) => getStackFromStackName(projectEntry.prefix!))
-			.map(async (stack) => {
-				const results = await this.getStackResultsForStack(
-					projectName,
-					stack.name,
-				);
-				return {
-					...stack,
-					results,
-				};
-			});
-
-		return [
-			await onlyFulfilledPromises(stackPromises),
-			projectEntries.filter((file) => !file.prefix).map((file) => file.name),
-		] as const;
-	}
-
-	private async getStackResultsForStack(
-		projectName: string,
-		stackName: string,
-	) {
-		const stackEntries = await this.minioClientService.listFiles(
-			`${projectName}/${stackName}/outputs/`,
-			false,
-		);
-		return stackEntries
-			.filter((e) => e.name)
-			.map((e) =>
-				// biome-ignore lint/style/noNonNullAssertion: <explanation>
-				getResultImageFromName(e.name!, e.lastModified),
-			);
+	async getTotalMemory() {
+		const totalUsage = await this.minioClientService.getCompleteMemoryUsageInGB()
+		const maxUsage = this.envService.get("MAX_STORAGE_GB")
+		return {
+			totalUsage,
+			maxUsage
+		}
 	}
 }
