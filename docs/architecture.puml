@@ -8,16 +8,18 @@ skinparam nodesep 100
 
 cloud RabbitMQ
 node FFmpeg
+database "LibSQL"
 database "Minio"
 
 [Frontend] <--> [Backend] : HTTP Requests
 
 [Backend] <--> [Minio] : S3 API
-[Backend] -r-> [RabbitMQ] : Publishes messages
-[RabbitMQ] -r-> [Go Image Processor] : Consumes messages
+[Backend] <-r-> [LibSQL] : SQL
+[Backend] -r-> [RabbitMQ] : Publishes
+[RabbitMQ] -r-> [Go Image Processor] : Consumes
 
 [Go Image Processor] --> [Backend] : HTTP Requests
 [Go Image Processor] --> [FFmpeg] : Executes commands
-[Go Image Processor] <--> [Minio] : S3 API
+[Go Image Processor] <-r-> [Minio] : S3 API
 
 @enduml
