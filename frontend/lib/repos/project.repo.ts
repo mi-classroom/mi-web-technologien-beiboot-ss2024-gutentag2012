@@ -54,6 +54,7 @@ export type ProjectFull = Omit<
 export type Stack = {
 	id: number;
 	bucketPrefix: string;
+	processingJobId: number;
 	name: string;
 	project: string;
 	files: string[];

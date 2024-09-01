@@ -75,13 +75,35 @@ export function CreateStackFormDialog({
 				to: "",
 				frameRate: 30,
 			},
+			validator: (values) => {
+				const selectedProjectValue = selectedProject.peek();
+				if (!values.frameRate || !selectedProjectValue) return undefined;
+				const from = values.from ? timeStringToMillis(values.from) : 0;
+				const to = values.to
+					? timeStringToMillis(values.to)
+					: (selectedProjectValue.duration ?? 0) * 1000;
+				const duration = to - from;
+				const framesGenerated = Math.floor(
+					(duration * values.frameRate) / 1000,
+				);
+				if (!framesGenerated) return "This would generate 0 frames";
+				return (
+					framesGenerated >
+						Number(process.env.NEXT_PUBLIC_MAX_FRAMES_PER_STACK) &&
+					`This would generate ${framesGenerated} frames, which is more than the maximum of ${process.env.NEXT_PUBLIC_MAX_FRAMES_PER_STACK}`
+				);
+			},
 			onSubmit: async (values, addErrors) => {
 				const stack = await createStack(values).catch((err) => {
 					addErrors({
 						"": err.message,
 					});
+					return undefined;
 				});
-				if (!stack) return;
+				if (!stack) {
+					progress.isOpen.value = false;
+					return;
+				}
 
 				progress.isOpen.value = true;
 				progress.data.value = {
@@ -97,14 +119,14 @@ export function CreateStackFormDialog({
 
 						serverRevalidateTag("stacks");
 						r(undefined);
-					}).then(async () => {
+					}).then(() => {
 						isCreateStackDrawerOpen.value = false;
-						await form.reset();
+						form.reset();
 					});
 				});
 			},
 		});
-	}, [form, project, progress]);
+	}, [form, project, progress, selectedProject]);
 
 	return (
 		<>
@@ -131,9 +153,13 @@ export function CreateStackFormDialog({
 						</DialogHeader>
 
 						<div className="mt-4 flex flex-col gap-1">
-							<form.FieldProvider name="projectId">
+							<form.FieldProvider
+								name="projectId"
+								transformFromBinding={(e: string) => Number.parseInt(e)}
+								transformToBinding={(e) => e.toString()}
+							>
 								<Label>Project</Label>
-								<SelectForm>
+								<SelectForm useTransform>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
@@ -145,7 +171,7 @@ export function CreateStackFormDialog({
 													project.processingJob.status === "done",
 											)
 											.map((project) => (
-												<SelectItem key={project.id} value={project.id}>
+												<SelectItem key={project.id} value={`${project.id}`}>
 													{project.name}
 												</SelectItem>
 											))}
@@ -156,7 +182,9 @@ export function CreateStackFormDialog({
 									name="name"
 									validator={(value) => {
 										if (!value) return "Please provide a stack name";
-										const stackNames = selectedProject.peek().imageStackNames;
+										const projectValue = selectedProject.peek();
+										if (!projectValue) return "Please select a project";
+										const stackNames = projectValue.imageStackNames;
 										if (stackNames?.includes(value))
 											return "A stack with this name already exists";
 										return undefined;
@@ -175,7 +203,7 @@ export function CreateStackFormDialog({
 										.number()
 										.int()
 										.positive()
-										.max(selectedProject.value?.maxWidth)}
+										.max(selectedProject.value?.maxWidth ?? 1600)}
 									transformToBinding={(v) => v?.toString()}
 									transformFromBinding={(v) =>
 										!v ? (null as unknown as number) : Number.parseInt(v)
@@ -199,7 +227,7 @@ export function CreateStackFormDialog({
 									.number()
 									.int()
 									.positive()
-									.max(selectedProject.value?.maxFrameRate)}
+									.max(selectedProject.value?.maxFrameRate ?? 30)}
 								transformToBinding={(v) => v?.toString()}
 								transformFromBinding={(v) =>
 									!v ? (null as unknown as number) : Number.parseInt(v)
@@ -229,7 +257,9 @@ export function CreateStackFormDialog({
 											.or(z.literal(""))
 											.refine((value) => {
 												const fromSeconds = timeStringToMillis(value) / 1000;
-												return fromSeconds <= selectedProject.value?.duration;
+												return (
+													fromSeconds <= (selectedProject.peek()?.duration ?? 0)
+												);
 											}, "The timestamp must be less than the video duration") as never
 									}
 								>
@@ -260,7 +290,10 @@ export function CreateStackFormDialog({
 													.or(z.literal(""))
 													.refine((value) => {
 														const toSeconds = timeStringToMillis(value) / 1000;
-														return toSeconds <= selectedProject.value?.duration;
+														return (
+															toSeconds <=
+															(selectedProject.peek()?.duration ?? 0)
+														);
 													}, "The timestamp must be less than the video duration"),
 												z.string(),
 											])

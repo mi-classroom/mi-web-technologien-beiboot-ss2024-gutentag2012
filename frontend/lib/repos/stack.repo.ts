@@ -1,4 +1,5 @@
 import { getServerApiUrl } from "@/lib/env";
+import type { Stack } from "@/lib/repos/project.repo";
 
 export async function createStack(values: {
 	scale: number;
@@ -6,7 +7,7 @@ export async function createStack(values: {
 	to: string;
 	frameRate: number;
 	projectId: number;
-}): Promise<void> {
+}): Promise<Stack> {
 	return fetch(`${getServerApiUrl()}/stack`, {
 		method: "POST",
 		headers: {
@@ -36,7 +37,7 @@ export async function deleteImage(imageId: number) {
 
 export async function getStacksForProject(projectId: number | string) {
 	return fetch(`${getServerApiUrl()}/projects/${projectId}/stacks`, {
-		next: { tags: ["stacks", projectId] },
+		next: { tags: ["stacks", `${projectId}`] },
 	}).then((res) => res.json());
 }
 
@@ -50,7 +51,7 @@ export async function getAvailableStacks() {
 
 export async function getStack(stackId: number) {
 	return fetch(`${getServerApiUrl()}/stack/${stackId}`, {
-		next: { tags: ["stacks", stackId] },
+		next: { tags: ["stacks", `${stackId}`] },
 	}).then((res) => res.json());
 }
 

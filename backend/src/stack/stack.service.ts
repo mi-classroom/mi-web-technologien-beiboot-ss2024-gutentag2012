@@ -5,10 +5,8 @@ import { LibSQLDatabase } from "drizzle-orm/libsql";
 import { AmqpClientService } from "../amqp-client/amqp-client.service";
 import { DATABASE } from "../database/database.provider";
 import * as schema from "../database/schema";
-import {
-	MinioClientService,
-	UnsupportedMimeType,
-} from "../minio-client/minio-client.service";
+import { EnvService } from "../env/env.service";
+import { MinioClientService } from "../minio-client/minio-client.service";
 import { CreateStackDto } from "./dto/CreateStack.dto";
 import { GenerateImageDto } from "./dto/GenerateImage.dto";
 
@@ -17,6 +15,7 @@ export class StackService {
 	constructor(
 		private readonly minioClientService: MinioClientService,
 		private readonly amqpClientService: AmqpClientService,
+		private readonly envService: EnvService,
 		@Inject(DATABASE) private readonly db: LibSQLDatabase<typeof schema>,
 	) {}
 
@@ -161,6 +160,45 @@ export class StackService {
 		if (similarProject) {
 			throw new HttpException(
 				"Stack with the same configuration already exists",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		// Check that the from and to timestamps are less than the project duration
+		const from = data.from.split(":").map((v) => Number.parseInt(v));
+		const to = data.to.split(":").map((v) => Number.parseInt(v));
+		const fromInSeconds =
+			from.length === 3 ? from[0] * 3600 + from[1] * 60 + from[2] : 0;
+		const toInSeconds =
+			to.length === 3
+				? to[0] * 3600 + to[1] * 60 + to[2]
+				: project.duration ?? 0;
+		if (fromInSeconds > (project.duration ?? 0)) {
+			throw new HttpException(
+				"From timestamp is greater than project duration",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+		if (toInSeconds > (project.duration ?? 0)) {
+			throw new HttpException(
+				"To timestamp is greater than project duration",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		// Check that the frames generated is not bigger than the maximum allowed
+		const maxAllowedFrames = this.envService.get("MAX_FRAMES_PER_STACK");
+		const duration = toInSeconds - fromInSeconds;
+		const framesGenerated = Math.floor(duration * data.frameRate);
+		if (!framesGenerated) {
+			throw new HttpException(
+				"This would generate 0 frames",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+		if (framesGenerated > maxAllowedFrames) {
+			throw new HttpException(
+				`This would generate ${framesGenerated} frames, which is more than the maximum of ${maxAllowedFrames}`,
 				HttpStatus.BAD_REQUEST,
 			);
 		}

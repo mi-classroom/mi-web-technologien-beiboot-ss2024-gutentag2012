@@ -19,7 +19,7 @@ import {
 } from "../ui/alert-dialog";
 import { Progress } from "../ui/progress";
 
- type ProcessingJob =
+type ProcessingJob =
 	| {
 			status: "queued";
 			stepTimestamps: number[];

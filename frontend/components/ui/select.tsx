@@ -18,12 +18,14 @@ interface SelectSignalProps
 	extends Omit<
 		React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>,
 		"value" | "onValueChange"
-	> {}
-const SelectForm = (props: SelectSignalProps) => {
+	> {
+	useTransform?: boolean;
+}
+const SelectForm = ({ useTransform, ...props }: SelectSignalProps) => {
 	const field = useFieldContext<string, "">();
 	return (
 		<Select
-			value={field.data?.value}
+			value={useTransform ? field.transformedData?.value : field.data?.value}
 			onValueChange={field.handleChange}
 			{...props}
 		/>
