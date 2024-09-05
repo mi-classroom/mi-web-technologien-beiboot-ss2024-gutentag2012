@@ -5,6 +5,8 @@ import {
 	isGenerateImageDrawerOpen,
 } from "@/components/image/image.signal";
 import { CreateStackButton } from "@/components/stack/CreateStackButton";
+import { DeleteStackDialog } from "@/components/stack/DeleteStackDialog";
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -37,8 +39,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { Stack } from "@/lib/repos/project.repo";
-import { deleteStack } from "@/lib/repos/stack.repo";
-import { serverRevalidateTag } from "@/lib/serverRevalidateTag";
 import { EllipsisVerticalIcon, ImagePlusIcon, Trash2Icon } from "lucide-react";
 
 type StackTableProps = {
@@ -67,6 +67,7 @@ export function StackTable({ stacks, className }: StackTableProps) {
 							<TableHead>To</TableHead>
 							<TableHead>Framerate</TableHead>
 							<TableHead>Scale</TableHead>
+							<TableHead>Memory Usage</TableHead>
 							<TableHead>Results</TableHead>
 							<TableHead className="text-right">Actions</TableHead>
 						</TableRow>
@@ -76,7 +77,7 @@ export function StackTable({ stacks, className }: StackTableProps) {
 							{!stacks.length && (
 								<TableRow className="hover:bg-transparent">
 									<TableCell
-										colSpan={7}
+										colSpan={8}
 										className="text-muted-foreground text-center py-4 text-base"
 									>
 										No stacks found
@@ -84,61 +85,58 @@ export function StackTable({ stacks, className }: StackTableProps) {
 								</TableRow>
 							)}
 							{stacks.map((stack) => (
-								<ContextMenu key={stack.name}>
-									<ContextMenuTrigger asChild>
-										<TableRow onDoubleClick={generateForStack(stack)}>
-											<TableCell>{stack.name}</TableCell>
-											<TableCell>{stack.from || "-"}</TableCell>
-											<TableCell>{stack.to || "-"}</TableCell>
-											<TableCell>{stack.frameRate}</TableCell>
-											<TableCell>{stack.scale}</TableCell>
-											<TableCell>{stack.totalResultCount}</TableCell>
-											<TableCell align="right">
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
-														<Button size="icon" variant="ghost">
-															<EllipsisVerticalIcon className="h-4 w-4" />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent>
-														<DropdownMenuItem onClick={generateForStack(stack)}>
-															<ImagePlusIcon className="h-4 w-4 mr-2" />
-															Generate Image
-														</DropdownMenuItem>
-														<DropdownMenuSeparator />
-														<DropdownMenuItem
-															className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
-															onClick={async () => {
-																await deleteStack(stack.id);
-																await serverRevalidateTag("stacks");
-															}}
-														>
-															<Trash2Icon className="h-4 w-4 mr-2" />
-															Delete
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
-											</TableCell>
-										</TableRow>
-									</ContextMenuTrigger>
-									<ContextMenuContent>
-										<ContextMenuItem onClick={generateForStack(stack)}>
-											<ImagePlusIcon className="h-4 w-4 mr-2" />
-											Generate Image
-										</ContextMenuItem>
-										<ContextMenuSeparator />
-										<ContextMenuItem
-											className="group bg-destructive text-destructive-foreground focus:bg-destructive/40"
-											onClick={async () => {
-												await deleteStack(stack.id);
-												await serverRevalidateTag("stacks");
-											}}
-										>
-											<Trash2Icon className="h-4 w-4 mr-2" />
-											Delete
-										</ContextMenuItem>
-									</ContextMenuContent>
-								</ContextMenu>
+								<DeleteStackDialog stack={stack} key={stack.name}>
+									<ContextMenu>
+										<ContextMenuTrigger asChild>
+											<TableRow onDoubleClick={generateForStack(stack)}>
+												<TableCell>{stack.name}</TableCell>
+												<TableCell>{stack.from || "-"}</TableCell>
+												<TableCell>{stack.to || "-"}</TableCell>
+												<TableCell>{stack.frameRate}</TableCell>
+												<TableCell>{stack.scale}</TableCell>
+												<TableCell>{stack.memoryUsage.toFixed(2)} GB</TableCell>
+												<TableCell>{stack.totalResultCount}</TableCell>
+												<TableCell align="right">
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button size="icon" variant="ghost">
+																<EllipsisVerticalIcon className="h-4 w-4" />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent>
+															<DropdownMenuItem
+																onClick={generateForStack(stack)}
+															>
+																<ImagePlusIcon className="h-4 w-4 mr-2" />
+																Generate Image
+															</DropdownMenuItem>
+															<DropdownMenuSeparator />
+															<AlertDialogTrigger asChild>
+																<ContextMenuItem className="group bg-destructive text-destructive-foreground focus:bg-destructive/40">
+																	<Trash2Icon className="h-4 w-4 mr-2" />
+																	Delete
+																</ContextMenuItem>
+															</AlertDialogTrigger>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</TableCell>
+											</TableRow>
+										</ContextMenuTrigger>
+										<ContextMenuContent>
+											<ContextMenuItem onClick={generateForStack(stack)}>
+												<ImagePlusIcon className="h-4 w-4 mr-2" />
+												Generate Image
+											</ContextMenuItem>
+											<ContextMenuSeparator />
+											<AlertDialogTrigger asChild>
+												<ContextMenuItem className="group bg-destructive text-destructive-foreground focus:bg-destructive/40">
+													<Trash2Icon className="h-4 w-4 mr-2" />
+													Delete
+												</ContextMenuItem>
+											</AlertDialogTrigger>
+										</ContextMenuContent>
+									</ContextMenu>
+								</DeleteStackDialog>
 							))}
 						</>
 					</TableBody>

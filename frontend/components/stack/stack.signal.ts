@@ -13,7 +13,7 @@ type CreateStackFormValues = {
 	name: string;
 	to: string;
 	frameRate: number;
-	projectId?: string;
+	projectId: number;
 };
 
 export const createStackForm = new FormLogic<

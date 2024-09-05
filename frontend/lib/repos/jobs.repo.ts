@@ -24,3 +24,12 @@ export function listenToJob(
 		eventSource.onopen = () => r(undefined);
 	});
 }
+
+export function getMemoryUsage(): Promise<{
+	totalUsage: number;
+	maxUsage: number;
+}> {
+	return fetch(`${getServerApiUrl()}/projects/total-memory`).then((res) =>
+		res.json(),
+	);
+}

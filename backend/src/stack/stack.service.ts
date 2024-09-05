@@ -5,10 +5,8 @@ import { LibSQLDatabase } from "drizzle-orm/libsql";
 import { AmqpClientService } from "../amqp-client/amqp-client.service";
 import { DATABASE } from "../database/database.provider";
 import * as schema from "../database/schema";
-import {
-	MinioClientService,
-	UnsupportedMimeType,
-} from "../minio-client/minio-client.service";
+import { EnvService } from "../env/env.service";
+import { MinioClientService } from "../minio-client/minio-client.service";
 import { CreateStackDto } from "./dto/CreateStack.dto";
 import { GenerateImageDto } from "./dto/GenerateImage.dto";
 
@@ -17,6 +15,7 @@ export class StackService {
 	constructor(
 		private readonly minioClientService: MinioClientService,
 		private readonly amqpClientService: AmqpClientService,
+		private readonly envService: EnvService,
 		@Inject(DATABASE) private readonly db: LibSQLDatabase<typeof schema>,
 	) {}
 
@@ -25,6 +24,7 @@ export class StackService {
 			.select({
 				id: schema.ImageStacks.id,
 				bucketPrefix: schema.ImageStacks.bucketPrefix,
+				projectBucketPrefix: schema.Projects.bucketPrefix,
 				name: schema.ImageStacks.name,
 				fromTimestamp: schema.ImageStacks.fromTimestamp,
 				toTimestamp: schema.ImageStacks.toTimestamp,
@@ -34,11 +34,26 @@ export class StackService {
 			})
 			.from(schema.ImageStacks)
 			.leftJoin(
+				schema.Projects,
+				eq(schema.ImageStacks.projectId, schema.Projects.id),
+			)
+			.leftJoin(
 				schema.ResultImages,
 				eq(schema.ImageStacks.id, schema.ResultImages.imageStackId),
 			)
 			.groupBy(schema.ImageStacks.id)
-			.where(eq(schema.ImageStacks.projectId, projectId));
+			.where(eq(schema.ImageStacks.projectId, projectId))
+			.then((res) =>
+				Promise.all(
+					res.map(async (stack) => ({
+						...stack,
+						memoryUsage:
+							await this.minioClientService.getCompleteMemoryUsageInGB(
+								`${stack.projectBucketPrefix}/${stack.bucketPrefix}`,
+							),
+					})),
+				),
+			);
 	}
 
 	async getAvailableStacks() {
@@ -50,8 +65,8 @@ export class StackService {
 				project: schema.Projects.name,
 				projectPrefix: schema.Projects.bucketPrefix,
 				stackPrefix: schema.ImageStacks.bucketPrefix,
-				fromTimestamp: schema.ImageStacks.fromTimestamp,
-				toTimestamp: schema.ImageStacks.toTimestamp,
+				from: schema.ImageStacks.fromTimestamp,
+				to: schema.ImageStacks.toTimestamp,
 				frameRate: schema.ImageStacks.frameRate,
 				duration: schema.Projects.duration,
 			})
@@ -79,7 +94,7 @@ export class StackService {
 		const files = await this.minioClientService
 			.listFiles(`${stack.project.bucketPrefix}/${stack.bucketPrefix}`, true)
 			.then((res) =>
-				res.filter((file) => !file.prefix).map((file) => file.name),
+				res.filter((file) => !file.prefix && !file.name?.includes("/outputs/")).map((file) => file.name),
 			);
 
 		return {
@@ -90,8 +105,11 @@ export class StackService {
 	}
 
 	async generateImageForStack(stackId: number, data: GenerateImageDto) {
-		if(await this.minioClientService.isMemoryLimitReached()) {
-			throw new HttpException("Memory limit reached", HttpStatus.INTERNAL_SERVER_ERROR);
+		if (await this.minioClientService.isMemoryLimitReached()) {
+			throw new HttpException(
+				"Memory limit reached",
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const stack = await this.db.query.ImageStacks.findFirst({
@@ -137,8 +155,11 @@ export class StackService {
 	}
 
 	async createStack(data: CreateStackDto) {
-		if(await this.minioClientService.isMemoryLimitReached()) {
-			throw new HttpException("Memory limit reached", HttpStatus.INTERNAL_SERVER_ERROR);
+		if (await this.minioClientService.isMemoryLimitReached()) {
+			throw new HttpException(
+				"Memory limit reached",
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const project = await this.db.query.Projects.findFirst({
@@ -155,6 +176,45 @@ export class StackService {
 		if (similarProject) {
 			throw new HttpException(
 				"Stack with the same configuration already exists",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		// Check that the from and to timestamps are less than the project duration
+		const from = data.from.split(":").map((v) => Number.parseInt(v));
+		const to = data.to.split(":").map((v) => Number.parseInt(v));
+		const fromInSeconds =
+			from.length === 3 ? from[0] * 3600 + from[1] * 60 + from[2] : 0;
+		const toInSeconds =
+			to.length === 3
+				? to[0] * 3600 + to[1] * 60 + to[2]
+				: project.duration ?? 0;
+		if (fromInSeconds > (project.duration ?? 0)) {
+			throw new HttpException(
+				"From timestamp is greater than project duration",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+		if (toInSeconds > (project.duration ?? 0)) {
+			throw new HttpException(
+				"To timestamp is greater than project duration",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		// Check that the frames generated is not bigger than the maximum allowed
+		const maxAllowedFrames = this.envService.get("MAX_FRAMES_PER_STACK");
+		const duration = toInSeconds - fromInSeconds;
+		const framesGenerated = Math.floor(duration * data.frameRate);
+		if (!framesGenerated) {
+			throw new HttpException(
+				"This would generate 0 frames",
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+		if (framesGenerated > maxAllowedFrames) {
+			throw new HttpException(
+				`This would generate ${framesGenerated} frames, which is more than the maximum of ${maxAllowedFrames}`,
 				HttpStatus.BAD_REQUEST,
 			);
 		}

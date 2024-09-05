@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Express } from "express";
+import { EnvService } from "../env/env.service";
 import { StackService } from "../stack/stack.service";
 import { CreateProjectDto } from "./dto/CreateProject.dto";
 import { UpdateMetaDto } from "./dto/UpdateMeta.dto";
@@ -23,7 +24,14 @@ export class ProjectsController {
 	constructor(
 		private readonly projectsService: ProjectsService,
 		private readonly stacksService: StackService,
+		private readonly envService: EnvService,
 	) {}
+
+	@Get("total-memory")
+	async getTotalMemory() {
+		return this.projectsService.getTotalMemory();
+	}
+
 	@Get("/")
 	async getAllProjects() {
 		return this.projectsService.getAllProjects();
@@ -42,6 +50,9 @@ export class ProjectsController {
 	) {
 		if (!file) {
 			throw new HttpException("No file uploaded", HttpStatus.BAD_REQUEST);
+		}
+		if (file.size > this.envService.get("MAX_FILE_SIZE")) {
+			throw new HttpException("File is too large", HttpStatus.BAD_REQUEST);
 		}
 		return this.projectsService.createProject(file, body);
 	}

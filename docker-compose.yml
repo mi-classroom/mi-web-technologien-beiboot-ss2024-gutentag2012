@@ -86,6 +86,8 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - DB_URL=http://database:8080
       - MAX_STORAGE_GB=1
+      - MAX_FILE_SIZE=104857600
+      - MAX_FRAMES_PER_STACK=500
 
   frontend:
     container_name: 'frontend'
@@ -97,6 +99,8 @@ services:
       args:
         - NEXT_PUBLIC_API_URL=https://localhost/api
         - SERVER_API_URL=http://backend:3001
+        - NEXT_PUBLIC_MAX_FILE_SIZE=104857600
+        - NEXT_PUBLIC_MAX_FRAMES_PER_STACK=500
     ports:
       - '3000:3000'
     restart: always

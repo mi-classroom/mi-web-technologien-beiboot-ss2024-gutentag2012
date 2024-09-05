@@ -10,6 +10,7 @@ export type Project = {
 	isPublic: boolean;
 	videoFile: string;
 
+	memoryUsage: number;
 	maxWidth?: number;
 	maxHeight?: number;
 	maxFrameRate?: number;
@@ -37,12 +38,12 @@ export type ProjectFull = Omit<
 		id: number;
 		bucketPrefix: string;
 		name: string;
-		fromTimestamp: string;
-		toTimestamp: string;
+		from: string;
+		to: string;
 		frameRate: number;
 		scale: number;
 		resultImages: Array<{
-			id: number
+			id: number;
 			filename: string;
 			frames: number[];
 			weights: number[];
@@ -54,20 +55,26 @@ export type ProjectFull = Omit<
 export type Stack = {
 	id: number;
 	bucketPrefix: string;
+	processingJobId: number;
 	name: string;
-	fromTimestamp: string;
-	toTimestamp: string;
+	from: string;
+	to: string;
+	project: string;
+	files: string[];
+	frameCount: number;
 	frameRate: number;
 	scale: number;
+	memoryUsage: number;
 	totalResultCount: number;
 };
 
 export type ResultImage = {
-	id: number
+	id: number;
 	filename: string;
 	project: string;
 	stack: string;
 	frames: number[];
+	weights: number[];
 	lastModified?: number;
 };
 
@@ -131,7 +138,7 @@ export async function createProject(
 					state: "error",
 					error: `Failed to upload file: "${response?.message ?? response}"`,
 				};
-				return;
+				return reject(response);
 			}
 
 			status.value = {

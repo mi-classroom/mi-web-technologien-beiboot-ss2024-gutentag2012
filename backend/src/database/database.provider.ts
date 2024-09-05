@@ -1,6 +1,5 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import { EnvModule } from "../env/env.module";
 import { EnvService } from "../env/env.service";
 import * as schema from "./schema";
 
@@ -15,5 +14,4 @@ export const databaseProvider = {
 	},
 	exports: [DATABASE],
 	inject: [EnvService],
-	imports: [EnvModule],
 };

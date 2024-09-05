@@ -127,9 +127,9 @@ export function GenerateImageFormDialog({
 
 							serverRevalidateTag("projects");
 							r(undefined);
-						}).then(async () => {
+						}).then(() => {
 							isGenerateImageDrawerOpen.value = false;
-							await form.reset();
+							form.reset();
 						});
 					});
 				},

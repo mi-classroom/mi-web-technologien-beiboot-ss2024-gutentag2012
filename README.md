@@ -115,4 +115,8 @@ Zum Starten der Anwendung (für Development) müssen folgende Schritte durchgef�
 | Reploy                                      | 2h          |
 | Total Issue #5                              | 14h         |
 |                                             |             |
-| Total                                       | 51h         |
+| Refactoring                                 | 2h          |
+| Add size limits                             | 2h          |
+| Total Issue #6                              | 4h          |
+|                                             |             |
+| Total                                       | 55h         |
